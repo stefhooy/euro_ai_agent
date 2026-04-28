@@ -1,12 +1,12 @@
 import json
 import logging
-import os
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
 from langgraph.prebuilt import create_react_agent
+from pydantic import BaseModel, Field
 
 from agent.memory import TripMemory
 from agent.planner import assemble_itinerary
@@ -28,8 +28,11 @@ _agent_run_state = {}
 # TOOL WRAPPERS
 # ==========================================
 
-@tool
-def score_destinations_tool(preferences: dict) -> dict:
+class ScoreDestinationsInput(BaseModel):
+    preferences: Dict[str, Any] = Field(description="User travel preferences.")
+
+@tool("score_destinations_tool", args_schema=ScoreDestinationsInput)
+def score_destinations_tool(preferences: Dict[str, Any]) -> dict:
     """Scores and selects the best European cities based on user preferences."""
     global _agent_run_state
     logger.info("Executing score_destinations_tool...")
@@ -38,14 +41,25 @@ def score_destinations_tool(preferences: dict) -> dict:
     _agent_run_state['all_scored_cities'] = result.get("top_destinations", [])
     return result
 
-@tool
-def estimate_flights_tool(departure_city: str, destinations: list, travel_month: int, travel_style: str = "mid_range") -> dict:
+class EstimateFlightsInput(BaseModel):
+    departure_city: str = Field(description="The city where the trip starts.")
+    destinations: List[str] = Field(description="List of city names to visit.")
+    travel_month: int = Field(description="Month of travel (1-12).")
+    travel_style: str = Field(default="mid_range", description="The travel style.")
+
+@tool("estimate_flights_tool", args_schema=EstimateFlightsInput)
+def estimate_flights_tool(departure_city: str, destinations: List[str], travel_month: int, travel_style: str = "mid_range") -> dict:
     """Estimates flight costs from departure_city to a list of destinations."""
     logger.info("Executing estimate_flights_tool...")
     return estimate_flights(departure_city, destinations, travel_month, travel_style)
 
-@tool
-def estimate_accommodation_tool(cities: list, nights_per_city: dict, travel_style: str) -> dict:
+class EstimateAccommodationInput(BaseModel):
+    cities: List[str] = Field(description="List of city names to visit.")
+    nights_per_city: Dict[str, int] = Field(description="Dictionary mapping each city name to the number of nights.")
+    travel_style: str = Field(description="The user's travel style.")
+
+@tool("estimate_accommodation_tool", args_schema=EstimateAccommodationInput)
+def estimate_accommodation_tool(cities: List[str], nights_per_city: Dict[str, int], travel_style: str) -> dict:
     """
     Estimates accommodation costs for cities based on travel style and duration.
     nights_per_city is a dictionary mapping each city name to the number of nights.
@@ -53,13 +67,24 @@ def estimate_accommodation_tool(cities: list, nights_per_city: dict, travel_styl
     logger.info("Executing estimate_accommodation_tool...")
     return estimate_accommodation(cities, nights_per_city, travel_style)
 
-@tool
-def get_activities_tool(cities: list, preferences: list, nights_per_city: dict) -> dict:
+class GetActivitiesInput(BaseModel):
+    cities: List[str] = Field(description="List of city names.")
+    preferences: List[str] = Field(description="List of user activity preferences.")
+    nights_per_city: Dict[str, int] = Field(description="Dictionary mapping each city name to the number of nights.")
+
+@tool("get_activities_tool", args_schema=GetActivitiesInput)
+def get_activities_tool(cities: List[str], preferences: List[str], nights_per_city: Dict[str, int]) -> dict:
     """Selects and schedules activities for cities based on preferences."""
     return get_activities(cities, preferences, nights_per_city)
 
-@tool
-def calculate_budget_tool(trip_plan: dict, user_budget: float, travel_style: str, duration: int) -> dict:
+class CalculateBudgetInput(BaseModel):
+    trip_plan: Dict[str, Any] = Field(description="Current trip plan containing flights, accommodation, and activities.")
+    user_budget: float = Field(description="Total user budget.")
+    travel_style: str = Field(description="Travel style.")
+    duration: int = Field(description="Total duration of the trip in days.")
+
+@tool("calculate_budget_tool", args_schema=CalculateBudgetInput)
+def calculate_budget_tool(trip_plan: Dict[str, Any], user_budget: float, travel_style: str, duration: int) -> dict:
     """
     Calculates total trip budget and compares against the user budget.
     trip_plan must be a dictionary containing 'flights', 'accommodation', and 'activities'
@@ -68,8 +93,12 @@ def calculate_budget_tool(trip_plan: dict, user_budget: float, travel_style: str
     logger.info("Executing calculate_budget_tool...")
     return calculate_budget(trip_plan, user_budget, travel_style, duration)
 
-@tool
-def replanner_tool(trip_plan: dict, budget_result: dict) -> dict:
+class ReplannerInput(BaseModel):
+    trip_plan: Dict[str, Any] = Field(description="Current trip plan.")
+    budget_result: Dict[str, Any] = Field(description="Current budget result.")
+
+@tool("replanner_tool", args_schema=ReplannerInput)
+def replanner_tool(trip_plan: Dict[str, Any], budget_result: Dict[str, Any]) -> dict:
     """Autonomously adjusts the trip plan to fit within the budget if it is over budget."""
     global _agent_run_state
     logger.info("Executing replanner_tool...")
@@ -101,22 +130,16 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     global _agent_run_state
     _agent_run_state = {'preferences': preferences} # Prime the state
 
-    logger.info("Initializing Gemini ReAct Agent...")
-    
+    logger.info("Initializing Ollama ReAct Agent...")
+
     # Initialize Memory
     memory = TripMemory()
     memory.save_preferences(preferences)
-    
-    # Initialize LLM
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        logger.error("GOOGLE_API_KEY environment variable is not set!")
-        raise ValueError("Missing GOOGLE_API_KEY. Please add it to your .env file.")
-        
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
+
+    # Initialize LLM (runs locally via Ollama — no API key needed)
+    llm = ChatOllama(
+        model="mistral",
         temperature=0.3,
-        api_key=api_key
     )
     
     # Load tools
@@ -160,14 +183,17 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     
     last_chunk = None
     try:
-        # Use .stream() instead of .invoke() to get real-time updates
-        for chunk in agent.stream({"messages": messages}):
-            # The chunk is the full state of the graph at that point.
-            # We can inspect the latest message to see the agent's thought.
-            last_message = chunk.get("messages", [])[-1]
-            if last_message.type == "ai" and last_message.content:
-                # Log the thought in real-time
-                logger.info(f"Agent Thought: {last_message.content.strip()}")
+        # Use .stream() with stream_mode="values" to get the full state at each step
+        for chunk in agent.stream({"messages": messages}, stream_mode="values"):
+            messages_list = chunk.get("messages", [])
+            if messages_list:
+                # We can inspect the latest message to see the agent's thought.
+                last_message = messages_list[-1]
+                if getattr(last_message, "type", None) == "ai" and getattr(last_message, "content", None):
+                    # Log the thought in real-time
+                    content = last_message.content
+                    log_text = content.strip() if isinstance(content, str) else str(content)
+                    logger.info(f"Agent Thought: {log_text}")
             
             # Keep track of the last state chunk
             last_chunk = chunk
@@ -249,8 +275,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
 def run_critic(itinerary: str, preferences: dict) -> str:
     """Runs a secondary Critic Agent to review the finalized itinerary."""
     logger.info("Initializing Critic Agent...")
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3, api_key=api_key)
+    llm = ChatOllama(model="mistral", temperature=0.3)
     
     prompt = f"""Please review the following European travel itinerary based on the user's preferences: {preferences}.
 Itinerary:\n{itinerary}
