@@ -3,8 +3,13 @@ from pathlib import Path
 import streamlit as st
 import plotly.express as px
 
+from dotenv import load_dotenv
+
 # Ensure the root project directory is in the Python path so we can import our modules
 sys.path.append(str(Path(__file__).parent.parent))
+
+# Load environment variables from .env file
+load_dotenv()
 
 from agent.core import run_agent, run_critic
 
