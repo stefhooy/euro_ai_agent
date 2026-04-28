@@ -1,0 +1,110 @@
+{
+  "Barcelona": [
+    {"name": "Sagrada Familia Guided Tour", "category": "history", "cost_eur": 26, "duration_hours": 2, "description": "Explore Antoni Gaudí's magnificent unfinished basilica."},
+    {"name": "Gothic Quarter Tapas Crawl", "category": "food", "cost_eur": 65, "duration_hours": 3, "description": "Taste local Catalan delicacies and wine in the historic center."},
+    {"name": "Beachfront Club Entry", "category": "nightlife", "cost_eur": 20, "duration_hours": 4, "description": "Dance the night away at a famous Barceloneta nightclub."},
+    {"name": "Picasso Museum", "category": "museums", "cost_eur": 12, "duration_hours": 2, "description": "View one of the most extensive collections of artworks by Pablo Picasso."},
+    {"name": "Montjuïc Cable Car", "category": "nature", "cost_eur": 15, "duration_hours": 1, "description": "Enjoy panoramic views of the city and sea from above."},
+    {"name": "Passeig de Gràcia Shopping", "category": "shopping", "cost_eur": 0, "duration_hours": 3, "description": "Window shop or splurge on Barcelona's most luxurious street."},
+    {"name": "Parasailing over Barceloneta", "category": "adventure", "cost_eur": 90, "duration_hours": 1.5, "description": "Soar high above the Mediterranean coast for thrilling views."}
+  ],
+  "Paris": [
+    {"name": "Louvre Museum Entry", "category": "museums", "cost_eur": 17, "duration_hours": 4, "description": "See the Mona Lisa and thousands of historic masterpieces."},
+    {"name": "Eiffel Tower Summit Access", "category": "history", "cost_eur": 28, "duration_hours": 3, "description": "Ride to the top of the iconic iron lady for breathtaking views."},
+    {"name": "Seine River Dinner Cruise", "category": "food", "cost_eur": 85, "duration_hours": 2.5, "description": "Enjoy a gourmet French meal while cruising past illuminated monuments."},
+    {"name": "Moulin Rouge Cabaret Show", "category": "nightlife", "cost_eur": 120, "duration_hours": 3, "description": "Experience the world-famous Parisian cabaret and can-can dancers."},
+    {"name": "Champs-Élysées Boutiques", "category": "shopping", "cost_eur": 0, "duration_hours": 3, "description": "Stroll and shop along the most famous avenue in the world."},
+    {"name": "Bois de Boulogne Picnic", "category": "nature", "cost_eur": 0, "duration_hours": 2, "description": "Relax in the vast public park on the western edge of the city."},
+    {"name": "Catacombs Underground Exploration", "category": "adventure", "cost_eur": 29, "duration_hours": 2, "description": "Descend into the dark, bone-lined tunnels beneath the city streets."}
+  ],
+  "Rome": [
+    {"name": "Colosseum & Roman Forum Tour", "category": "history", "cost_eur": 35, "duration_hours": 3, "description": "Step back into ancient Rome with a guided archaeological tour."},
+    {"name": "Vatican Museums & Sistine Chapel", "category": "museums", "cost_eur": 30, "duration_hours": 4, "description": "Marvel at Michelangelo's frescoes and papal collections."},
+    {"name": "Trastevere Street Food Tour", "category": "food", "cost_eur": 50, "duration_hours": 3, "description": "Sample suppli, pizza al taglio, and gelato in a vibrant neighborhood."},
+    {"name": "Via del Corso Shopping", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Browse popular Italian and international brands in the city center."},
+    {"name": "Tiber Island Walk", "category": "nature", "cost_eur": 0, "duration_hours": 1, "description": "Take a peaceful stroll along the river and the ancient island."},
+    {"name": "Testaccio Nightclub Entry", "category": "nightlife", "cost_eur": 15, "duration_hours": 4, "description": "Experience authentic Roman nightlife in the Testaccio district."},
+    {"name": "Gladiator School Experience", "category": "adventure", "cost_eur": 120, "duration_hours": 2, "description": "Learn ancient Roman combat techniques in a hands-on training session."}
+  ],
+  "Amsterdam": [
+    {"name": "Rijksmuseum Admission", "category": "museums", "cost_eur": 22, "duration_hours": 3, "description": "Discover Dutch Golden Age masterpieces including Rembrandt's Night Watch."},
+    {"name": "Historic Canal Cruise", "category": "history", "cost_eur": 16, "duration_hours": 1.5, "description": "Learn about Amsterdam's merchant history from the water."},
+    {"name": "Jordaan Food & Cheese Walk", "category": "food", "cost_eur": 45, "duration_hours": 2.5, "description": "Taste local gouda, bitterballen, and stroopwafels."},
+    {"name": "Leidseplein Bar Crawl", "category": "nightlife", "cost_eur": 25, "duration_hours": 4, "description": "Join a lively pub crawl through Amsterdam's busiest nightlife square."},
+    {"name": "The Nine Streets Shopping", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Explore vintage shops and boutique stores in the canal ring."},
+    {"name": "Vondelpark Bike Ride", "category": "nature", "cost_eur": 10, "duration_hours": 2, "description": "Rent a bike and cycle through the city's largest and most famous park."},
+    {"name": "A'DAM Lookout Swing", "category": "adventure", "cost_eur": 25, "duration_hours": 1, "description": "Dangle your feet off Europe's highest swing over the city skyline."}
+  ],
+  "Prague": [
+    {"name": "Prague Castle Complex Tour", "category": "history", "cost_eur": 18, "duration_hours": 3, "description": "Visit the largest ancient castle complex in the world."},
+    {"name": "Czech Beer Tasting Tour", "category": "food", "cost_eur": 35, "duration_hours": 3, "description": "Sample world-famous Czech pilsners and traditional pub snacks."},
+    {"name": "Karlovy Lazne Club Entry", "category": "nightlife", "cost_eur": 12, "duration_hours": 4, "description": "Party in a 5-story nightclub, the largest in Central Europe."},
+    {"name": "National Museum", "category": "museums", "cost_eur": 10, "duration_hours": 2, "description": "Explore Czech history, arts, and music in a stunning neo-Renaissance building."},
+    {"name": "Palladium Mall Shopping", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Shop at the largest modern retail center in the heart of Prague."},
+    {"name": "Petrin Hill Funicular & Walk", "category": "nature", "cost_eur": 4, "duration_hours": 2, "description": "Ride up the hill for relaxing park walks and views of the city spires."},
+    {"name": "Vltava River Rafting", "category": "adventure", "cost_eur": 45, "duration_hours": 2.5, "description": "Navigate the rapids and enjoy the city from a thrilling water perspective."}
+  ],
+  "Lisbon": [
+    {"name": "Belém Tower & Jerónimos", "category": "history", "cost_eur": 15, "duration_hours": 3, "description": "Discover Portugal's Age of Discovery at these UNESCO sites."},
+    {"name": "Fado Show with Dinner", "category": "nightlife", "cost_eur": 60, "duration_hours": 3, "description": "Listen to soulful traditional Portuguese music while dining."},
+    {"name": "Pastel de Nata Masterclass", "category": "food", "cost_eur": 40, "duration_hours": 2, "description": "Learn to bake Lisbon's famous custard tarts from scratch."},
+    {"name": "Oceanário de Lisboa", "category": "nature", "cost_eur": 22, "duration_hours": 2.5, "description": "Visit one of the largest and most impressive indoor aquariums in Europe."},
+    {"name": "Gulbenkian Museum", "category": "museums", "cost_eur": 10, "duration_hours": 2, "description": "View a vast private collection spanning ancient to modern art."},
+    {"name": "LX Factory Artisan Shops", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Browse quirky boutiques and bookstores in a converted industrial complex."},
+    {"name": "Surfing Lesson at Carcavelos", "category": "adventure", "cost_eur": 35, "duration_hours": 2, "description": "Catch the Atlantic waves with a beginner-friendly surf lesson."}
+  ],
+  "Vienna": [
+    {"name": "Schönbrunn Palace Grand Tour", "category": "history", "cost_eur": 26, "duration_hours": 3, "description": "Tour the magnificent summer residence of the Habsburg emperors."},
+    {"name": "Albertina Art Museum", "category": "museums", "cost_eur": 19, "duration_hours": 2.5, "description": "Admire masterpieces from Monet to Picasso in a former palace."},
+    {"name": "Prater Amusement Park Ride", "category": "adventure", "cost_eur": 8, "duration_hours": 2, "description": "Ride the giant historic Ferris wheel for epic city views."},
+    {"name": "Naschmarkt Tasting Walk", "category": "food", "cost_eur": 30, "duration_hours": 2, "description": "Explore Vienna's most popular market and taste local specialties."},
+    {"name": "State Opera Standing Ticket", "category": "nightlife", "cost_eur": 15, "duration_hours": 3, "description": "Experience world-class opera on a budget with a standing room ticket."},
+    {"name": "Graben & Kohlmarkt Shopping", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Stroll through Vienna's most elegant and upscale shopping streets."},
+    {"name": "Danube Tower Bungee Jump", "category": "adventure", "cost_eur": 150, "duration_hours": 2, "description": "Experience an adrenaline rush leaping off Vienna's tallest structure."}
+  ],
+  "Budapest": [
+    {"name": "Parliament Building Tour", "category": "history", "cost_eur": 24, "duration_hours": 1.5, "description": "Marvel at the stunning neo-Gothic interior of Hungary's parliament."},
+    {"name": "Széchenyi Thermal Baths", "category": "nature", "cost_eur": 27, "duration_hours": 4, "description": "Relax in the medicinal waters of Europe's largest thermal bath complex."},
+    {"name": "Ruin Bar Pub Crawl", "category": "nightlife", "cost_eur": 20, "duration_hours": 4, "description": "Discover Budapest's unique nightlife in abandoned buildings turned bars."},
+    {"name": "Hungarian National Museum", "category": "museums", "cost_eur": 9, "duration_hours": 2, "description": "Learn about the rich and turbulent history of the Hungarian nation."},
+    {"name": "Central Market Hall Tasting", "category": "food", "cost_eur": 15, "duration_hours": 1.5, "description": "Try lángos and local sausages in this massive indoor market."},
+    {"name": "Váci Street Boutiques", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Walk along Budapest's main pedestrian shopping thoroughfare."},
+    {"name": "Caving under Buda Hills", "category": "adventure", "cost_eur": 35, "duration_hours": 3, "description": "Crawl and climb through the extensive natural cave systems beneath the city."}
+  ],
+  "Berlin": [
+    {"name": "Museum Island Day Pass", "category": "museums", "cost_eur": 21, "duration_hours": 5, "description": "Access five world-class museums on an island in the Spree river."},
+    {"name": "Third Reich Walking Tour", "category": "history", "cost_eur": 20, "duration_hours": 3, "description": "A deep dive into Berlin's WWII history and the Berlin Wall."},
+    {"name": "Kreuzberg Street Food Tour", "category": "food", "cost_eur": 45, "duration_hours": 3, "description": "Taste the best currywurst and Turkish kebabs in this hip district."},
+    {"name": "Techno Club Entry", "category": "nightlife", "cost_eur": 25, "duration_hours": 6, "description": "Experience Berlin's legendary underground electronic music scene."},
+    {"name": "Tiergarten Park Walk", "category": "nature", "cost_eur": 0, "duration_hours": 2, "description": "Escape the city buzz in Berlin's most popular inner-city park."},
+    {"name": "Kurfürstendamm Shopping", "category": "shopping", "cost_eur": 0, "duration_hours": 3, "description": "Shop along Berlin's most famous and historic retail boulevard."},
+    {"name": "Base Flying from Park Inn", "category": "adventure", "cost_eur": 80, "duration_hours": 1, "description": "Plummet 125 meters down the side of Alexanderplatz's tallest hotel."}
+  ],
+  "Dubrovnik": [
+    {"name": "Ancient City Walls Walk", "category": "history", "cost_eur": 35, "duration_hours": 2, "description": "Walk the spectacular fortified walls surrounding the old town."},
+    {"name": "Adriatic Sea Kayaking", "category": "adventure", "cost_eur": 40, "duration_hours": 3, "description": "Paddle around the old city walls and to the nearby Lokrum island."},
+    {"name": "Game of Thrones Tour", "category": "history", "cost_eur": 25, "duration_hours": 2, "description": "Visit the filming locations of King's Landing."},
+    {"name": "Old Town Seafood Dinner", "category": "food", "cost_eur": 60, "duration_hours": 2, "description": "Enjoy fresh Dalmatian coast seafood in a romantic historic setting."},
+    {"name": "Banje Beach Club", "category": "nightlife", "cost_eur": 20, "duration_hours": 4, "description": "Party on the beach with views of the illuminated city walls."},
+    {"name": "Lokrum Island Nature Reserve", "category": "nature", "cost_eur": 27, "duration_hours": 4, "description": "Take a short ferry to an island filled with peacocks and botanical gardens."},
+    {"name": "Buggy Safari on Mount Srđ", "category": "adventure", "cost_eur": 55, "duration_hours": 2, "description": "Drive off-road buggies on the rugged terrain overlooking the old town."}
+  ],
+  "Athens": [
+    {"name": "Acropolis & Parthenon Tour", "category": "history", "cost_eur": 30, "duration_hours": 3, "description": "Climb the ancient citadel to see the iconic temple of Athena."},
+    {"name": "Acropolis Museum", "category": "museums", "cost_eur": 15, "duration_hours": 2, "description": "View artifacts recovered from the Acropolis site in a modern setting."},
+    {"name": "Plaka Neighborhood Food Tour", "category": "food", "cost_eur": 55, "duration_hours": 3, "description": "Taste authentic souvlaki, moussaka, and Greek pastries."},
+    {"name": "Monastiraki Flea Market", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Hunt for souvenirs, antiques, and local crafts."},
+    {"name": "Mount Lycabettus Sunset Hike", "category": "nature", "cost_eur": 0, "duration_hours": 2, "description": "Hike to the highest point in Athens for stunning sunset views."},
+    {"name": "Gazi District Clubbing", "category": "nightlife", "cost_eur": 15, "duration_hours": 4, "description": "Experience vibrant Greek nightlife in a repurposed gasworks neighborhood."},
+    {"name": "Scuba Diving in the Saronic Gulf", "category": "adventure", "cost_eur": 85, "duration_hours": 4, "description": "Explore underwater reefs and marine life off the Athenian coast."}
+  ],
+  "Porto": [
+    {"name": "Port Wine Cellar Tasting", "category": "food", "cost_eur": 25, "duration_hours": 2, "description": "Tour a historic cellar in Vila Nova de Gaia and taste sweet Port wine."},
+    {"name": "Douro River Six Bridges Cruise", "category": "nature", "cost_eur": 18, "duration_hours": 1, "description": "Sail on a traditional Rabelo boat under Porto's iconic bridges."},
+    {"name": "Clérigos Tower Climb", "category": "history", "cost_eur": 8, "duration_hours": 1, "description": "Climb 225 steps for a 360-degree panoramic view of the city."},
+    {"name": "Serralves Museum of Contemporary Art", "category": "museums", "cost_eur": 13, "duration_hours": 2.5, "description": "Explore cutting-edge art and beautiful manicured gardens."},
+    {"name": "Galerias de Paris Nightlife", "category": "nightlife", "cost_eur": 10, "duration_hours": 4, "description": "Bar hop on Porto's most famous nightlife street."},
+    {"name": "Rua de Santa Catarina Shopping", "category": "shopping", "cost_eur": 0, "duration_hours": 2, "description": "Walk Porto's main pedestrian shopping street and see the Majestic Café."},
+    {"name": "Peneda-Gerês 4x4 Tour", "category": "adventure", "cost_eur": 75, "duration_hours": 8, "description": "Embark on an off-road excursion to Portugal's only national park."}
+  ]
+}
