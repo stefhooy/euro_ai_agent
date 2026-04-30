@@ -5,7 +5,6 @@ import requests
 logger = logging.getLogger(__name__)
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-TELEPORT_SEARCH = "https://api.teleport.org/api/cities/"
 TIMEOUT = 8
 
 # Regional baseline daily costs in EUR (backpacker / mid_range / luxury)
@@ -62,62 +61,14 @@ def get_coordinates(city_name: str, country: str) -> dict:
     return {"lat": 48.2082, "lon": 16.3738}  # Vienna as fallback
 
 
-def get_teleport_cost_modifier(city_name: str) -> float | None:
-    """
-    Fetches a cost of living modifier from the Teleport API.
-    Returns a multiplier (0.6 = very cheap, 1.6 = very expensive),
-    or None if the city is not in Teleport's database.
-
-    Args:
-        city_name: Name of the city.
-
-    Returns:
-        Float multiplier or None on failure.
-    """
-    try:
-        params = {
-            "search": city_name,
-            "embed": "city:search-results/city:item/city:urban_area",
-        }
-        r = requests.get(TELEPORT_SEARCH, params=params, timeout=TIMEOUT)
-        r.raise_for_status()
-        data = r.json()
-
-        results = data.get("_embedded", {}).get("city:search-results", [])
-        if not results:
-            return None
-
-        item = results[0].get("_embedded", {}).get("city:item", {})
-        ua_link = item.get("_links", {}).get("city:urban_area")
-        if not ua_link:
-            return None
-
-        scores_r = requests.get(f"{ua_link['href']}scores/", timeout=TIMEOUT)
-        scores_r.raise_for_status()
-        categories = scores_r.json().get("categories", [])
-
-        for cat in categories:
-            if cat.get("name") == "Cost of Living":
-                score = cat["score_out_of_10"]
-                # Higher score = cheaper city
-                if score >= 8:   return 0.6
-                elif score >= 6: return 0.8
-                elif score >= 4: return 1.0
-                elif score >= 2: return 1.3
-                else:            return 1.6
-    except Exception as e:
-        logger.warning(f"Teleport failed for {city_name}: {e}")
-    return None
-
-
 def build_city_profile(seed_city: dict) -> dict:
     """
-    Builds a full scoring profile for a city by combining the seed data
-    with live Nominatim coordinates and Teleport cost modifiers.
-    Both API calls run in parallel. Falls back gracefully on any failure.
+    Builds a full scoring profile for a city from seed data.
+    Uses pre-computed coordinates from the seed JSON; only calls Nominatim
+    as a last resort for any city missing lat/lon.
 
     Args:
-        seed_city: A dict from european_cities_seed.json with name, country, region, tags.
+        seed_city: A dict from european_cities_seed.json.
 
     Returns:
         A complete city profile dict compatible with destination.py scoring.
@@ -126,16 +77,13 @@ def build_city_profile(seed_city: dict) -> dict:
     country = seed_city["country"]
     region = seed_city.get("region", "western_europe")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
-        coord_f = ex.submit(get_coordinates, name, country)
-        cost_f = ex.submit(get_teleport_cost_modifier, name)
-        geo = coord_f.result()
-        cost_modifier = cost_f.result()
+    # Use pre-computed coordinates from seed data; only call Nominatim as fallback
+    if "lat" in seed_city and "lon" in seed_city:
+        geo = {"lat": seed_city["lat"], "lon": seed_city["lon"]}
+    else:
+        geo = get_coordinates(name, country)
 
     base_costs = REGIONAL_COSTS[region].copy()
-    if cost_modifier:
-        base_costs = {k: round(v * cost_modifier) for k, v in base_costs.items()}
-        logger.info(f"Teleport modifier {cost_modifier:.1f}x applied to {name} costs.")
 
     return {
         "name": name,

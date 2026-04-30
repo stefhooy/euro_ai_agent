@@ -20,7 +20,8 @@ def get_wiki_summary(city_name: str) -> str:
     """
     try:
         url = WIKI_API.format(city_name.replace(" ", "_"))
-        response = requests.get(url, timeout=TIMEOUT)
+        headers = {"User-Agent": "EuroTripAgent/1.0 (student project; contact: eurotrip-agent@example.com)"}
+        response = requests.get(url, headers=headers, timeout=TIMEOUT)
         response.raise_for_status()
         data = response.json()
         extract = data.get("extract", "")
