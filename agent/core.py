@@ -138,7 +138,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
 
     # Initialize LLM (runs locally via Ollama — no API key needed)
     llm = ChatOllama(
-        model="mistral",
+        model="llama3.1:8b",
         temperature=0.3,
     )
     

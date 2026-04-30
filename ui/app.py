@@ -43,11 +43,14 @@ if "budget_result" not in st.session_state:
     st.session_state.budget_result = None
 if "preferences" not in st.session_state:
     st.session_state.preferences = None
+if "critic_review" not in st.session_state:
+    st.session_state.critic_review = None
 
 def reset_app():
     st.session_state.itinerary = None
     st.session_state.budget_result = None
     st.session_state.preferences = None
+    st.session_state.critic_review = None
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -103,6 +106,7 @@ if plan_button:
                 st.session_state.itinerary = itinerary
                 st.session_state.budget_result = budget_result
                 st.session_state.preferences = preferences
+                st.session_state.critic_review = None  # reset so critic reruns for new plan
             except Exception as e:
                 st.error(f"An error occurred while planning the trip: {e}")
 
@@ -143,9 +147,12 @@ if st.session_state.itinerary and st.session_state.budget_result:
         # Critic Agent Self-Review
         st.subheader("Agent's Self-Review")
         with st.expander("🤖 View Agent Critique"):
-            with st.spinner("Generating review..."):
-                review = run_critic(st.session_state.itinerary, st.session_state.preferences)
-                st.write(review)
+            if st.session_state.critic_review is None:
+                with st.spinner("Generating review..."):
+                    st.session_state.critic_review = run_critic(
+                        st.session_state.itinerary, st.session_state.preferences
+                    )
+            st.write(st.session_state.critic_review)
 
 else:
     # Hero section when empty
@@ -153,4 +160,4 @@ else:
     st.markdown("<p style='text-align: center; font-size: 1.2rem;'>Adjust your travel preferences in the sidebar and click <b>Plan My Trip</b> to unleash the AI agent!</p>", unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: gray;'>Built with LangGraph + Google Gemini | Master's AI Project</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>Built with LangGraph + Ollama (Mistral) | Master's AI Project</p>", unsafe_allow_html=True)
