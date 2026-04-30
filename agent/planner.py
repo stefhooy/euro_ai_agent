@@ -86,6 +86,18 @@ def _format_pricing_calendar(pricing_calendar: dict) -> list:
     return lines
 
 
+def _format_transport_leg(leg: dict) -> str:
+    """Format one transport leg with mode, directness, duration, and cost."""
+    mode = leg.get("mode", "flight").title()
+    direct_label = "direct" if leg.get("direct", True) else f"{leg.get('changes', 1)} change(s)"
+    duration = leg.get("duration_hours")
+    duration_label = f", {duration:g}h" if isinstance(duration, (int, float)) else ""
+    return (
+        f"{leg['from']} â†’ {leg['to']} by {mode} "
+        f"({direct_label}{duration_label}) â€” â‚¬{leg['cost_eur']:,.0f}"
+    )
+
+
 def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any], preferences: Dict[str, Any]) -> str:
     """
     Assembles all tool outputs into a beautifully formatted string itinerary.
@@ -107,13 +119,14 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
     user_budget = budget_result.get("user_budget", 0)
     buffer = budget_result.get("buffer", 0)
     departure_city = preferences.get("departure_city", "Home")
+    return_city = preferences.get("return_city", departure_city)
     travel_month = preferences.get("travel_month", 1)
     month_name = calendar.month_name[travel_month]
     travel_start_date = preferences.get("travel_start_date")
     travel_end_date = preferences.get("travel_end_date")
 
     destinations = trip_plan.get("destinations", [])
-    route_cities = [departure_city] + destinations + [departure_city]
+    route_cities = [departure_city] + destinations + [return_city]
     route_str = " → ".join(route_cities)
 
     itinerary = [
@@ -123,6 +136,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         "",
         "Trip Overview:",
         f"- Departure City:    {departure_city}",
+        f"- Ending City:       {return_city}",
         f"- Travel Month:      {month_name}",
         f"- Travel Dates:      {travel_start_date} to {travel_end_date}" if travel_start_date and travel_end_date else "",
         f"- Duration:          {duration} days",
@@ -137,7 +151,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
 
     accommodation_data = trip_plan.get("accommodation", {}).get("city_breakdown", {})
     activities_data = trip_plan.get("activities", {}).get("city_activities", {})
-    flight_legs = trip_plan.get("flights", {}).get("flight_legs", [])
+    flight_legs = trip_plan.get("flights", {}).get("transport_legs") or trip_plan.get("flights", {}).get("flight_legs", [])
     web_data = trip_plan.get("web_data", {})
 
     food_cost_total = budget_result.get("food_cost", 0)
@@ -230,6 +244,16 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
 
         itinerary.append(f"City Subtotal: €{city_subtotal:,.0f}\n")
         current_day_global += max(nights, 1)
+
+    if flight_legs:
+        itinerary.extend([
+            "--------------------------------------------",
+            "TRANSPORT SUMMARY",
+            "--------------------------------------------",
+        ])
+        for leg in flight_legs:
+            itinerary.append(f"- {_format_transport_leg(leg)}")
+        itinerary.append("")
 
     # Show return flight after the last city
     if flight_legs:

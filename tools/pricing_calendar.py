@@ -5,8 +5,8 @@ from pathlib import Path
 
 from tools.accommodation import estimate_accommodation
 from tools.city_data import REGIONAL_BEST_MONTHS
-from tools.flights import estimate_flights
 from tools.seasonality import MONTHLY_MULTIPLIERS, get_season_label
+from tools.transport import estimate_transport
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,15 @@ def _best_weather_months(cities: list) -> list:
     return [calendar.month_abbr[month] for month in best_months]
 
 
-def get_pricing_calendar(cities: list, travel_style: str, departure_city: str) -> dict:
+def get_pricing_calendar(
+    cities: list,
+    travel_style: str,
+    departure_city: str,
+    return_city: str = None,
+    transport_modes: list = None,
+    route_priority: str = "best_balance",
+    directness: str = "allow_connections",
+) -> dict:
     """
     Estimate route costs across all 12 months for a selected city list.
 
@@ -51,11 +59,15 @@ def get_pricing_calendar(cities: list, travel_style: str, departure_city: str) -
     nights_per_city = {city: 2 for city in cities}
 
     for month, multiplier in MONTHLY_MULTIPLIERS.items():
-        flights = estimate_flights(
+        flights = estimate_transport(
             departure_city=departure_city,
             destinations=cities,
             travel_month=month,
             travel_style=travel_style,
+            return_city=return_city or departure_city,
+            transport_modes=transport_modes,
+            route_priority=route_priority,
+            directness=directness,
         )
         accommodation = estimate_accommodation(
             cities=cities,

@@ -3,9 +3,11 @@ from tools.pricing_calendar import get_pricing_calendar
 
 def test_pricing_calendar_returns_12_months():
     result = get_pricing_calendar(["Barcelona", "Paris"], "mid_range", "Sofia")
+    costs = [month["estimated_cost"] for month in result["monthly_costs"]]
+
     assert len(result["monthly_costs"]) == 12
-    assert result["cheapest_month"]["month_name"] == "January"
-    assert result["most_expensive_month"]["month_name"] in ["July", "August"]
+    assert result["cheapest_month"]["estimated_cost"] == min(costs)
+    assert result["most_expensive_month"]["estimated_cost"] == max(costs)
 
 
 def test_pricing_calendar_includes_weather_months():

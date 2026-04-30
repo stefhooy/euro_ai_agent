@@ -12,9 +12,9 @@ from tools.accommodation import estimate_accommodation
 from tools.activities import get_activities
 from tools.budget import calculate_budget
 from tools.destination import score_destinations
-from tools.flights import estimate_flights
 from tools.pricing_calendar import get_pricing_calendar
 from tools.replanner import replan
+from tools.transport import estimate_transport
 from tools.web_search import enrich_cities
 
 logger = logging.getLogger(__name__)
@@ -135,13 +135,17 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         year=_get_travel_year(preferences),
     )
 
-    # ── Step 3: Estimate flights ─────────────────────────────────────────────
-    logger.info(f"Step 3/6 — Estimating flights: {preferences['departure_city']} → {selected_cities}")
-    flights_result = estimate_flights(
+    # ── Step 3: Estimate transport ───────────────────────────────────────────
+    logger.info(f"Step 3/6 — Estimating transport: {preferences['departure_city']} → {selected_cities}")
+    flights_result = estimate_transport(
         departure_city=preferences["departure_city"],
         destinations=selected_cities,
         travel_month=preferences["travel_month"],
         travel_style=preferences["travel_style"],
+        return_city=preferences.get("return_city", preferences["departure_city"]),
+        transport_modes=preferences.get("transport_modes"),
+        route_priority=preferences.get("route_priority", "best_balance"),
+        directness=preferences.get("directness", "allow_connections"),
     )
 
     # ── Step 4: Estimate accommodation ──────────────────────────────────────
@@ -192,6 +196,10 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         cities=trip_plan["destinations"],
         travel_style=trip_plan["travel_style"],
         departure_city=preferences["departure_city"],
+        return_city=preferences.get("return_city", preferences["departure_city"]),
+        transport_modes=preferences.get("transport_modes"),
+        route_priority=preferences.get("route_priority", "best_balance"),
+        directness=preferences.get("directness", "allow_connections"),
     )
 
     logger.info("Pipeline complete. Assembling final itinerary...")

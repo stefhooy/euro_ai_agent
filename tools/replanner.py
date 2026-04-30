@@ -7,6 +7,7 @@ from .accommodation import estimate_accommodation
 from .activities import get_activities
 from .budget import calculate_budget
 from .flights import estimate_flights
+from .transport import estimate_transport
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +22,15 @@ def _recalculate_full_plan(
     travel_style = trip_plan["travel_style"]
 
     # Recalculate each component
-    trip_plan["flights"] = estimate_flights(
+    trip_plan["flights"] = estimate_transport(
         departure_city=preferences["departure_city"],
         destinations=destinations,
         travel_month=preferences["travel_month"],
         travel_style=travel_style,
+        return_city=preferences.get("return_city", preferences["departure_city"]),
+        transport_modes=preferences.get("transport_modes"),
+        route_priority=preferences.get("route_priority", "best_balance"),
+        directness=preferences.get("directness", "allow_connections"),
     )
     trip_plan["accommodation"] = estimate_accommodation(
         cities=destinations,

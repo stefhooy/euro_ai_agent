@@ -71,6 +71,23 @@ def test_assemble_itinerary_contains_cost_breakdown():
     assert "BUDGET" in result
 
 
+def test_assemble_itinerary_contains_transport_summary_and_return_city():
+    trip_plan, budget_result, preferences = _make_sample_inputs()
+    preferences["departure_city"] = "Sofia"
+    preferences["return_city"] = "London"
+    trip_plan["flights"]["transport_legs"] = [
+        {"from": "Sofia", "to": "Barcelona", "cost_eur": 120, "type": "outbound", "mode": "flight", "direct": True, "changes": 0, "duration_hours": 3.1},
+        {"from": "Barcelona", "to": "Paris", "cost_eur": 80, "type": "inter_city", "mode": "train", "direct": True, "changes": 0, "duration_hours": 6.5},
+        {"from": "Paris", "to": "London", "cost_eur": 130, "type": "inbound", "mode": "flight", "direct": True, "changes": 0, "duration_hours": 2.8},
+    ]
+
+    result = assemble_itinerary(trip_plan, budget_result, preferences)
+    assert "Ending City:       London" in result
+    assert "TRANSPORT SUMMARY" in result
+    assert "Barcelona" in result
+    assert "Train" in result
+
+
 def test_assemble_itinerary_under_budget_shows_checkmark():
     trip_plan, budget_result, preferences = _make_sample_inputs()
     result = assemble_itinerary(trip_plan, budget_result, preferences)

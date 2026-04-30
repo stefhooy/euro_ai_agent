@@ -26,7 +26,13 @@ def _get_departure_region(city: str) -> str:
     return "from_western_europe"
 
 
-def estimate_flights(departure_city: str, destinations: list, travel_month: int, travel_style: str = "mid_range") -> dict:
+def estimate_flights(
+    departure_city: str,
+    destinations: list,
+    travel_month: int,
+    travel_style: str = "mid_range",
+    return_city: str = None,
+) -> dict:
     """
     Estimates flight costs from a departure city to a list of destinations,
     including inter-city European flights.
@@ -36,11 +42,13 @@ def estimate_flights(departure_city: str, destinations: list, travel_month: int,
         destinations (list): A list of city names to visit.
         travel_month (int): The month of travel (1-12) for seasonal multipliers.
         travel_style (str): The travel style to determine inter-city flight costs.
+        return_city (str): Optional city where the trip ends. Defaults to departure_city.
         
     Returns:
         dict: A breakdown of flight legs, their estimated costs, and the total cost.
     """
-    logger.info(f"Estimating flights from {departure_city} to {destinations} for month {travel_month}.")
+    return_city = return_city or departure_city
+    logger.info(f"Estimating flights from {departure_city} to {destinations}, ending in {return_city}, for month {travel_month}.")
     
     base_dir = Path(__file__).parent.parent
     cities_path = base_dir / "data" / "cities.json"
@@ -93,7 +101,7 @@ def estimate_flights(departure_city: str, destinations: list, travel_month: int,
     base_inbound = city_cost_map.get(last_dest, {}).get(region_key, 150)
     cost_inbound = round(base_inbound * month_multiplier)
     
-    legs.append({"from": last_dest, "to": departure_city, "cost_eur": cost_inbound, "type": "inbound"})
+    legs.append({"from": last_dest, "to": return_city, "cost_eur": cost_inbound, "type": "inbound"})
     total_cost += cost_inbound
     
     logger.info(f"Total estimated flight cost calculated: €{total_cost}")

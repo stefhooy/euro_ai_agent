@@ -43,6 +43,11 @@ def test_estimate_flights_peak_more_expensive_than_offpeak():
     assert peak["total_flights_cost"] > offpeak["total_flights_cost"]
 
 
+def test_estimate_flights_accepts_return_city():
+    result = estimate_flights("Sofia", ["Barcelona"], travel_month=6, return_city="London")
+    assert result["flight_legs"][-1]["to"] == "London"
+
+
 def test_monthly_multiplier_table_covers_all_months():
     assert set(MONTHLY_MULTIPLIERS.keys()) == set(range(1, 13))
     assert MONTHLY_MULTIPLIERS[7] == 1.40
