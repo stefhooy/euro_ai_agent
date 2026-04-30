@@ -78,6 +78,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
     accommodation_data = trip_plan.get("accommodation", {}).get("city_breakdown", {})
     activities_data = trip_plan.get("activities", {}).get("city_activities", {})
     flight_legs = trip_plan.get("flights", {}).get("flight_legs", [])
+    web_data = trip_plan.get("web_data", {})
     
     food_cost_total = budget_result.get("food_cost", 0)
     food_rate = food_cost_total / duration if duration > 0 else 0
@@ -98,6 +99,20 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
             f"📍 {city} {flag} ({day_range})",
             "--------------------------------------------"
         ])
+
+        # Live Wikipedia description
+        city_web = web_data.get(city, {})
+        description = city_web.get("description", "")
+        if description:
+            itinerary.append(f"ℹ️  {description}")
+
+        # Live weather from Open-Meteo
+        weather = city_web.get("weather", {})
+        if weather.get("avg_high_c") is not None:
+            itinerary.append(
+                f"🌡️  Weather in this month: {weather['emoji']} {weather['condition']} "
+                f"— {weather['avg_low_c']}°C to {weather['avg_high_c']}°C"
+            )
         
         accom = accommodation_data.get(city, {})
         if accom:

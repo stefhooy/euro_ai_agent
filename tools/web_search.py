@@ -1,0 +1,138 @@
+import logging
+import requests
+
+logger = logging.getLogger(__name__)
+
+WIKI_API = "https://en.wikipedia.org/api/rest_v1/page/summary/{}"
+WEATHER_API = "https://archive-api.open-meteo.com/v1/archive"
+TIMEOUT = 8
+
+
+def get_wiki_summary(city_name: str) -> str:
+    """
+    Fetches a short description of a city from the Wikipedia REST API.
+
+    Args:
+        city_name: Name of the city.
+
+    Returns:
+        A 1-2 sentence plain-text summary, or a fallback string on failure.
+    """
+    try:
+        url = WIKI_API.format(city_name.replace(" ", "_"))
+        response = requests.get(url, timeout=TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+        extract = data.get("extract", "")
+        # Return first two sentences only
+        sentences = extract.split(". ")
+        summary = ". ".join(sentences[:2]).strip()
+        if summary and not summary.endswith("."):
+            summary += "."
+        logger.info(f"Wikipedia summary fetched for {city_name}.")
+        return summary
+    except Exception as e:
+        logger.warning(f"Wikipedia fetch failed for {city_name}: {e}")
+        return f"{city_name} is a popular European travel destination."
+
+
+def get_weather_summary(city_name: str, lat: float, lon: float, month: int) -> dict:
+    """
+    Fetches average temperature and precipitation for a city in a given month
+    using the Open-Meteo historical weather archive (free, no API key).
+
+    Args:
+        city_name: Name of the city (for logging).
+        lat: Latitude of the city.
+        lon: Longitude of the city.
+        month: Travel month as integer (1-12).
+
+    Returns:
+        Dict with avg_high_c, avg_low_c, avg_precipitation_mm, condition, emoji.
+    """
+    try:
+        # Use 2024 data as a reliable recent reference year
+        month_str = f"{month:02d}"
+        # Last day of month (use 28 to be safe across all months)
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "start_date": f"2024-{month_str}-01",
+            "end_date": f"2024-{month_str}-28",
+            "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
+            "timezone": "auto",
+        }
+        response = requests.get(WEATHER_API, params=params, timeout=TIMEOUT)
+        response.raise_for_status()
+        data = response.json().get("daily", {})
+
+        temps_max = [t for t in data.get("temperature_2m_max", []) if t is not None]
+        temps_min = [t for t in data.get("temperature_2m_min", []) if t is not None]
+        precip = [p for p in data.get("precipitation_sum", []) if p is not None]
+
+        avg_high = round(sum(temps_max) / len(temps_max), 1) if temps_max else None
+        avg_low = round(sum(temps_min) / len(temps_min), 1) if temps_min else None
+        avg_precip = round(sum(precip) / len(precip), 1) if precip else None
+
+        condition, emoji = _weather_condition(avg_high, avg_precip)
+
+        logger.info(f"Weather fetched for {city_name}: {avg_high}°C high, {condition}.")
+        return {
+            "avg_high_c": avg_high,
+            "avg_low_c": avg_low,
+            "avg_precipitation_mm": avg_precip,
+            "condition": condition,
+            "emoji": emoji,
+        }
+    except Exception as e:
+        logger.warning(f"Weather fetch failed for {city_name}: {e}")
+        return {
+            "avg_high_c": None,
+            "avg_low_c": None,
+            "avg_precipitation_mm": None,
+            "condition": "Unknown",
+            "emoji": "🌍",
+        }
+
+
+def _weather_condition(avg_high: float, avg_precip: float) -> tuple:
+    """Derives a human-readable condition and emoji from temperature and precipitation."""
+    if avg_high is None:
+        return "Unknown", "🌍"
+    if avg_high >= 28:
+        return ("Hot & Sunny", "☀️") if (avg_precip or 0) < 2 else ("Hot & Humid", "🌤️")
+    elif avg_high >= 20:
+        return ("Warm & Pleasant", "🌤️") if (avg_precip or 0) < 3 else ("Warm with showers", "🌦️")
+    elif avg_high >= 12:
+        return ("Mild", "⛅") if (avg_precip or 0) < 4 else ("Cool & Rainy", "🌧️")
+    else:
+        return ("Cold", "🧥") if (avg_precip or 0) < 3 else ("Cold & Wet", "🌨️")
+
+
+def enrich_cities(selected_cities: list, cities_data: list, travel_month: int) -> dict:
+    """
+    Fetches live Wikipedia descriptions and Open-Meteo weather data for each
+    selected city.
+
+    Args:
+        selected_cities: List of city name strings to enrich.
+        cities_data: Full list of city dicts from cities.json (for lat/lon).
+        travel_month: Travel month as integer (1-12).
+
+    Returns:
+        Dict mapping city name → {description, weather}.
+    """
+    geo_map = {
+        city["name"]: city.get("geo", {}) for city in cities_data
+    }
+    enriched = {}
+    for city in selected_cities:
+        logger.info(f"Fetching live data for {city}...")
+        geo = geo_map.get(city, {})
+        lat = geo.get("lat", 48.0)
+        lon = geo.get("lon", 16.0)
+        enriched[city] = {
+            "description": get_wiki_summary(city),
+            "weather": get_weather_summary(city, lat, lon, travel_month),
+        }
+    return enriched

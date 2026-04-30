@@ -13,6 +13,7 @@ from tools.budget import calculate_budget
 from tools.destination import score_destinations
 from tools.flights import estimate_flights
 from tools.replanner import replan
+from tools.web_search import enrich_cities
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,10 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     logger.info("Step 2/6 — LLM selecting cities and distributing nights...")
     selected_cities, nights_per_city = _llm_decide_cities(top_cities, preferences)
 
+    # ── Step 2b: Fetch live Wikipedia + weather data ─────────────────────────
+    logger.info("Step 2b/6 — Fetching live Wikipedia & weather data...")
+    web_data = enrich_cities(selected_cities, top_cities, preferences["travel_month"])
+
     # ── Step 3: Estimate flights ─────────────────────────────────────────────
     logger.info(f"Step 3/6 — Estimating flights: {preferences['departure_city']} → {selected_cities}")
     flights_result = estimate_flights(
@@ -144,6 +149,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         "flights": flights_result,
         "accommodation": accommodation_result,
         "activities": activities_result,
+        "web_data": web_data,
     }
     budget_result = calculate_budget(
         trip_plan=trip_plan,
