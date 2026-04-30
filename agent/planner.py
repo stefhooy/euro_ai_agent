@@ -45,6 +45,47 @@ FLAG_EMOJIS = {
 }
 
 
+def _format_pricing_calendar(pricing_calendar: dict) -> list:
+    """Format pricing calendar data as a compact text chart."""
+    monthly_costs = pricing_calendar.get("monthly_costs", [])
+    if not monthly_costs:
+        return []
+
+    max_cost = max((item.get("estimated_cost", 0) for item in monthly_costs), default=0)
+    cheapest = pricing_calendar.get("cheapest_month", {})
+    most_expensive = pricing_calendar.get("most_expensive_month", {})
+    best_weather = pricing_calendar.get("best_weather_months", [])
+
+    lines = [
+        "============================================",
+        "PRICING CALENDAR - BEST TIME TO VISIT",
+        "============================================",
+    ]
+
+    for item in monthly_costs:
+        cost = item.get("estimated_cost", 0)
+        filled = round((cost / max_cost) * 20) if max_cost else 0
+        bar = "#" * filled + "." * (20 - filled)
+        month_label = calendar.month_abbr[item.get("month", 1)]
+        note = ""
+        if item.get("month") == cheapest.get("month"):
+            note = " (cheapest)"
+        elif item.get("month") == most_expensive.get("month"):
+            note = " (most expensive)"
+        lines.append(f"{month_label:<3}  {bar}  â‚¬{cost:,.0f}{note}")
+
+    if best_weather:
+        lines.extend([
+            "============================================",
+            f"Best weather months: {', '.join(best_weather)}",
+            "============================================",
+        ])
+    else:
+        lines.append("============================================")
+
+    return lines
+
+
 def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any], preferences: Dict[str, Any]) -> str:
     """
     Assembles all tool outputs into a beautifully formatted string itinerary.
@@ -68,6 +109,8 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
     departure_city = preferences.get("departure_city", "Home")
     travel_month = preferences.get("travel_month", 1)
     month_name = calendar.month_name[travel_month]
+    travel_start_date = preferences.get("travel_start_date")
+    travel_end_date = preferences.get("travel_end_date")
 
     destinations = trip_plan.get("destinations", [])
     route_cities = [departure_city] + destinations + [departure_city]
@@ -81,6 +124,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         "Trip Overview:",
         f"- Departure City:    {departure_city}",
         f"- Travel Month:      {month_name}",
+        f"- Travel Dates:      {travel_start_date} to {travel_end_date}" if travel_start_date and travel_end_date else "",
         f"- Duration:          {duration} days",
         f"- Route:             {route_str}",
         f"- Travel Style:      {travel_style}",
@@ -220,5 +264,9 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         f"BUFFER:           €{abs(buffer):,.0f} ({status_text} {status_icon})",
         "============================================",
     ])
+
+    pricing_lines = _format_pricing_calendar(trip_plan.get("pricing_calendar", {}))
+    if pricing_lines:
+        itinerary.extend([""] + pricing_lines)
 
     return "\n".join(itinerary)

@@ -134,7 +134,15 @@ def get_activities(cities: list, preferences: list, nights_per_city: dict = None
 
     for city in cities:
         days = nights_per_city.get(city, 2)
-        country = seed.get(city, "Europe")
+        country = seed.get(city)
+
+        if country is None:
+            city_activities_result[city] = {
+                "activities": [],
+                "city_total_cost": 0.0,
+            }
+            logger.warning(f"No seed data found for {city}; returning no activities.")
+            continue
 
         raw_activities = _generate_activities_llm(city, country, preferences, days)
         if not raw_activities:

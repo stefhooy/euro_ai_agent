@@ -1,6 +1,7 @@
 import json
 import logging
 from pathlib import Path
+from tools.seasonality import get_month_multiplier
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +57,7 @@ def estimate_flights(departure_city: str, destinations: list, travel_month: int,
     
     region_key = _get_departure_region(departure_city)
     
-    # Apply seasonal multiplier
-    if travel_month in [6, 7, 8, 12]:  # Peak months
-        month_multiplier = 1.3
-    elif travel_month in [4, 5, 9, 10]:  # Shoulder months
-        month_multiplier = 1.0
-    else:  # Off-peak months
-        month_multiplier = 0.8
+    month_multiplier = get_month_multiplier(travel_month)
         
     legs = []
     total_cost = 0.0

@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import date, datetime
 from typing import Any, Dict, Tuple
 
 from langchain_ollama import ChatOllama
@@ -12,12 +13,26 @@ from tools.activities import get_activities
 from tools.budget import calculate_budget
 from tools.destination import score_destinations
 from tools.flights import estimate_flights
+from tools.pricing_calendar import get_pricing_calendar
 from tools.replanner import replan
 from tools.web_search import enrich_cities
 
 logger = logging.getLogger(__name__)
 
 LLM = ChatOllama(model="llama3.1:8b", temperature=0.3)
+
+
+def _get_travel_year(preferences: dict) -> int:
+    """Extract the selected travel year, falling back to a recent archive year."""
+    start_date = preferences.get("travel_start_date")
+    if isinstance(start_date, date):
+        return start_date.year
+    if isinstance(start_date, str):
+        try:
+            return datetime.fromisoformat(start_date).year
+        except ValueError:
+            logger.warning(f"Could not parse travel_start_date '{start_date}', using 2024 weather reference.")
+    return 2024
 
 
 def _llm_decide_cities(top_cities: list, preferences: dict) -> Tuple[list, dict]:
@@ -113,7 +128,12 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
 
     # ── Step 2b: Fetch live Wikipedia + weather data ─────────────────────────
     logger.info("Step 2b/6 — Fetching live Wikipedia & weather data...")
-    web_data = enrich_cities(selected_cities, top_cities, preferences["travel_month"])
+    web_data = enrich_cities(
+        selected_cities,
+        top_cities,
+        preferences["travel_month"],
+        year=_get_travel_year(preferences),
+    )
 
     # ── Step 3: Estimate flights ─────────────────────────────────────────────
     logger.info(f"Step 3/6 — Estimating flights: {preferences['departure_city']} → {selected_cities}")
@@ -130,6 +150,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         cities=selected_cities,
         nights_per_city=nights_per_city,
         travel_style=preferences["travel_style"],
+        travel_month=preferences["travel_month"],
     )
 
     # ── Step 5: Get activities ───────────────────────────────────────────────
@@ -166,6 +187,12 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         budget_result = replan_result["new_budget_result"]
         for change in replan_result["changes_made"]:
             logger.info(f"Replanning: {change}")
+
+    trip_plan["pricing_calendar"] = get_pricing_calendar(
+        cities=trip_plan["destinations"],
+        travel_style=trip_plan["travel_style"],
+        departure_city=preferences["departure_city"],
+    )
 
     logger.info("Pipeline complete. Assembling final itinerary...")
     final_itinerary = assemble_itinerary(trip_plan, budget_result, preferences)

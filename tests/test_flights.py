@@ -1,5 +1,6 @@
 import pytest
 from tools.flights import estimate_flights, _get_departure_region
+from tools.seasonality import MONTHLY_MULTIPLIERS
 
 
 def test_departure_region_eastern_europe():
@@ -40,3 +41,9 @@ def test_estimate_flights_peak_more_expensive_than_offpeak():
     peak = estimate_flights("Sofia", ["Barcelona"], travel_month=7)
     offpeak = estimate_flights("Sofia", ["Barcelona"], travel_month=1)
     assert peak["total_flights_cost"] > offpeak["total_flights_cost"]
+
+
+def test_monthly_multiplier_table_covers_all_months():
+    assert set(MONTHLY_MULTIPLIERS.keys()) == set(range(1, 13))
+    assert MONTHLY_MULTIPLIERS[7] == 1.40
+    assert MONTHLY_MULTIPLIERS[1] == 0.70

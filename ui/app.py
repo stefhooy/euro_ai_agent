@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from datetime import date, timedelta
 import streamlit as st
 import plotly.express as px
 
@@ -45,6 +46,10 @@ if "preferences" not in st.session_state:
     st.session_state.preferences = None
 if "critic_review" not in st.session_state:
     st.session_state.critic_review = None
+if "travel_start_date" not in st.session_state:
+    st.session_state.travel_start_date = date.today()
+if "travel_end_date" not in st.session_state:
+    st.session_state.travel_end_date = st.session_state.travel_start_date + timedelta(days=10)
 
 def reset_app():
     st.session_state.itinerary = None
@@ -62,6 +67,11 @@ with st.sidebar:
     duration_input = st.slider("Trip Duration (Days)", min_value=3, max_value=30, value=10)
     departure_input = st.text_input("Departure City", value="Sofia")
     style_input = st.selectbox("Travel Style", options=list(STYLE_MAP.keys()), index=1)
+    travel_start_input = st.date_input("Travel Start Date", value=st.session_state.travel_start_date)
+    travel_end_date = travel_start_input + timedelta(days=int(duration_input))
+    st.session_state.travel_start_date = travel_start_input
+    st.session_state.travel_end_date = travel_end_date
+    st.caption(f"Trip ends on {travel_end_date.isoformat()}")
     
     activities_input = st.multiselect(
         "Activity Preferences", 
@@ -70,7 +80,6 @@ with st.sidebar:
     )
     
     pace_input = st.selectbox("Pace", options=list(PACE_MAP.keys()), index=1)
-    month_input = st.selectbox("Travel Month", options=list(MONTH_MAP.keys()), index=5)
     
     st.markdown("---")
     col1, col2 = st.columns([2, 1])
@@ -94,7 +103,9 @@ if plan_button:
             "travel_style": STYLE_MAP[style_input],
             "activity_preferences": [ACTIVITY_MAP[act] for act in activities_input],
             "pace": PACE_MAP[pace_input],
-            "travel_month": MONTH_MAP[month_input]
+            "travel_month": travel_start_input.month,
+            "travel_start_date": travel_start_input.isoformat(),
+            "travel_end_date": travel_end_date.isoformat(),
         }
         
         with st.spinner("🤖 Agent is planning your trip. This takes about 15-30 seconds..."):

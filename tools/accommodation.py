@@ -1,6 +1,7 @@
 import json
 import logging
 from pathlib import Path
+from tools.seasonality import get_month_multiplier
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ RECOMMENDED_AREAS = {
     "Porto": "Ribeira"
 }
 
-def estimate_accommodation(cities: list, nights_per_city: dict, travel_style: str) -> dict:
+def estimate_accommodation(cities: list, nights_per_city: dict, travel_style: str, travel_month: int = 4) -> dict:
     """
     Estimates accommodation costs for a list of cities based on travel style and duration.
     
@@ -28,11 +29,13 @@ def estimate_accommodation(cities: list, nights_per_city: dict, travel_style: st
         cities (list): A list of city names to visit.
         nights_per_city (dict): A dictionary mapping city names to the number of nights staying there.
         travel_style (str): The user's travel style (backpacker, mid_range, luxury).
+        travel_month (int): The month of travel (1-12) for seasonal multipliers.
         
     Returns:
         dict: A breakdown of accommodation costs per city and the total estimated cost.
     """
-    logger.info(f"Estimating accommodation for {cities} with style '{travel_style}'.")
+    logger.info(f"Estimating accommodation for {cities} with style '{travel_style}' in month {travel_month}.")
+    month_multiplier = get_month_multiplier(travel_month)
     
     base_dir = Path(__file__).parent.parent
     cities_path = base_dir / "data" / "cities.json"
@@ -71,7 +74,7 @@ def estimate_accommodation(cities: list, nights_per_city: dict, travel_style: st
         else:
             nightly_cost = base_nightly
             
-        nightly_cost = round(nightly_cost)
+        nightly_cost = round(nightly_cost * month_multiplier)
         city_total = nightly_cost * nights
         total_accommodation_cost += city_total
         

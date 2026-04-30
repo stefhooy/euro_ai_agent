@@ -28,7 +28,10 @@ def _recalculate_full_plan(
         travel_style=travel_style,
     )
     trip_plan["accommodation"] = estimate_accommodation(
-        cities=destinations, nights_per_city=nights_per_city, travel_style=travel_style
+        cities=destinations,
+        nights_per_city=nights_per_city,
+        travel_style=travel_style,
+        travel_month=preferences["travel_month"],
     )
     trip_plan["activities"] = get_activities(
         cities=destinations,

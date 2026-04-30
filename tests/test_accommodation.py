@@ -46,3 +46,9 @@ def test_accommodation_multiple_cities():
         + result["city_breakdown"]["Rome"]["total_cost"]
     )
     assert result["total_accommodation_cost"] == total
+
+
+def test_accommodation_peak_month_more_expensive_than_offpeak():
+    peak = estimate_accommodation(["Barcelona"], {"Barcelona": 2}, "mid_range", travel_month=7)
+    offpeak = estimate_accommodation(["Barcelona"], {"Barcelona": 2}, "mid_range", travel_month=1)
+    assert peak["total_accommodation_cost"] > offpeak["total_accommodation_cost"]
