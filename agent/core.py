@@ -88,6 +88,21 @@ Reply ONLY with valid JSON like this example (no explanation, no markdown):
         if total != duration:
             diff = duration - total
             nights[cities[0]] += diff
+
+        # Validate country constraint: LLMs often pick the right cities but
+        # ignore the "exactly N countries" rule. If violated, fall back to
+        # the deterministic Python distribution which enforces it correctly.
+        if num_countries < 99:
+            city_country_map = {c["name"]: c.get("country", "") for c in top_cities}
+            unique_countries = {city_country_map.get(c, "") for c in cities}
+            unique_countries.discard("")
+            if len(unique_countries) != num_countries:
+                logger.warning(
+                    f"LLM chose cities from {len(unique_countries)} countries "
+                    f"(expected {num_countries}). Using fallback distribution."
+                )
+                return _fallback_city_distribution(top_cities, preferences)
+
         logger.info(f"LLM chose: {cities} with nights {nights}")
         return cities, nights
     except Exception as e:

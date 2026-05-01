@@ -1,3 +1,4 @@
+import importlib
 import sys
 import traceback
 from datetime import date, timedelta
@@ -10,6 +11,11 @@ from dotenv import load_dotenv
 
 sys.path.append(str(Path(__file__).parent.parent))
 load_dotenv()
+
+import agent.core as _agent_core
+import agent.planner as _agent_planner
+importlib.reload(_agent_core)
+importlib.reload(_agent_planner)
 
 from agent.core import run_agent, run_critic
 from agent.planner import CITY_TO_COUNTRY, FLAG_EMOJIS
