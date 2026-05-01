@@ -5,19 +5,53 @@ from tools.city_data import load_all_city_profiles
 
 logger = logging.getLogger(__name__)
 
+# Countries for common departure cities not in the seed
+_EXTRA_CITY_COUNTRIES = {
+    "London": "United Kingdom", "Manchester": "United Kingdom",
+    "Edinburgh": "United Kingdom", "Glasgow": "United Kingdom",
+    "Dublin": "Ireland",
+    "Frankfurt": "Germany", "Cologne": "Germany", "Dusseldorf": "Germany",
+    "Lyon": "France", "Marseille": "France", "Toulouse": "France",
+    "Naples": "Italy", "Turin": "Italy", "Bologna": "Italy",
+    "Valencia": "Spain", "Bilbao": "Spain", "Malaga": "Spain",
+    "Rotterdam": "Netherlands", "The Hague": "Netherlands",
+    "New York": "United States", "Los Angeles": "United States",
+    "Chicago": "United States", "Miami": "United States",
+    "Toronto": "Canada", "Montreal": "Canada", "Vancouver": "Canada",
+    "Sydney": "Australia", "Melbourne": "Australia",
+    "Dubai": "UAE", "Singapore": "Singapore",
+}
+
+
+def _get_departure_country(departure_city: str, seed_cities: list) -> str:
+    """Map a departure city name to its country, checking seed then fallback dict."""
+    dep_lower = departure_city.strip().lower()
+    for c in seed_cities:
+        if c["name"].lower() == dep_lower:
+            return c["country"]
+    for city_name, country in _EXTRA_CITY_COUNTRIES.items():
+        if city_name.lower() == dep_lower:
+            return country
+    return ""
+
 
 def score_destinations(preferences: dict) -> dict:
     """
     Scores and selects the best European cities based on user preferences.
-    City profiles are built dynamically using Nominatim and Teleport APIs
-    with regional cost fallbacks, so any of the 40 seed cities can be recommended.
+    City profiles are built dynamically from the seed JSON with regional cost
+    fallbacks, so any of the 40 seed cities can be recommended.
+
+    Supports domestic trip filtering: if preferences['trip_type'] == 'domestic',
+    only cities in the same country as the departure city are considered.
 
     Args:
         preferences: Dict containing budget, duration, travel_style,
-                     activity_preferences, and travel_month.
+                     activity_preferences, travel_month, and optionally
+                     trip_type and departure_city.
 
     Returns:
-        Dict with 'top_destinations' — top 5 cities sorted by score.
+        Dict with 'top_destinations' (top 5 cities by score) and
+        'domestic_fallback' (True if domestic filter found no matching cities).
     """
     logger.info("Starting destination scoring using live city profiles...")
 
@@ -30,6 +64,33 @@ def score_destinations(preferences: dict) -> dict:
     travel_style = preferences.get("travel_style", "mid_range")
     activity_prefs = preferences.get("activity_preferences", [])
     travel_month = preferences.get("travel_month", 6)
+    trip_type = preferences.get("trip_type", "international")
+    departure_city = preferences.get("departure_city", "")
+
+    domestic_fallback = False
+
+    # ── Domestic trip: filter to departure country ────────────────────────────
+    if trip_type == "domestic" and departure_city:
+        dep_country = _get_departure_country(departure_city, cities)
+        if dep_country:
+            domestic_cities = [c for c in cities if c.get("country") == dep_country]
+            if domestic_cities:
+                logger.info(
+                    f"Domestic trip: restricting to {dep_country} "
+                    f"({len(domestic_cities)} cities found)."
+                )
+                cities = domestic_cities
+            else:
+                logger.warning(
+                    f"No seed cities in '{dep_country}'. Falling back to international."
+                )
+                domestic_fallback = True
+        else:
+            logger.warning(
+                f"Could not determine country for '{departure_city}'. "
+                "Using all destinations."
+            )
+            domestic_fallback = True
 
     scored_cities = []
 
@@ -84,4 +145,4 @@ def score_destinations(preferences: dict) -> dict:
 
     top_cities = sorted(scored_cities, key=lambda x: x["score"], reverse=True)[:5]
     logger.info(f"Top {len(top_cities)} destinations selected from {len(cities)} cities.")
-    return {"top_destinations": top_cities}
+    return {"top_destinations": top_cities, "domestic_fallback": domestic_fallback}

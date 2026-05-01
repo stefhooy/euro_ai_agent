@@ -43,8 +43,17 @@ def _llm_decide_cities(top_cities: list, preferences: dict) -> Tuple[list, dict]
     """Ask the LLM to pick cities and distribute nights, then parse the result."""
     duration = preferences["duration"]
     pace = preferences.get("pace", "moderate")
+    num_countries = preferences.get("num_countries", 99)
 
     city_names = [c["name"] for c in top_cities]
+
+    if num_countries < 99:
+        country_rule = (
+            f"- Choose cities from EXACTLY {num_countries} different "
+            f"countr{'y' if num_countries == 1 else 'ies'}."
+        )
+    else:
+        country_rule = "- You may choose cities from any number of countries."
 
     prompt = f"""You are a travel planner. Given a {duration}-day trip at a '{pace}' pace,
 choose how many cities to visit and how many nights to spend in each.
@@ -57,6 +66,7 @@ Rules:
 - fast pace: pick 4 cities
 - Total nights must add up to exactly {duration}
 - Minimum 1 night per city
+{country_rule}
 
 Reply ONLY with valid JSON like this example (no explanation, no markdown):
 {{"cities": ["Barcelona", "Paris"], "nights": {{"Barcelona": 5, "Paris": 5}}}}"""
@@ -89,16 +99,37 @@ def _fallback_city_distribution(top_cities: list, preferences: dict) -> Tuple[li
     """Pure Python fallback if LLM response fails to parse."""
     duration = preferences["duration"]
     pace = preferences.get("pace", "moderate")
+    num_countries = preferences.get("num_countries", 99)
     pace_map = {"slow": 2, "moderate": 3, "fast": 4}
-    num_cities = min(pace_map.get(pace, 3), len(top_cities))
-    selected = [c["name"] for c in top_cities[:num_cities]]
-    base = duration // num_cities
-    extra = duration % num_cities
-    nights = {city: base + (1 if i < extra else 0) for i, city in enumerate(selected)}
+    target = min(pace_map.get(pace, 3), len(top_cities))
+
+    if num_countries < 99:
+        # First pick one city per country up to the limit,
+        # then fill remaining slots from already-chosen countries.
+        selected, countries_seen = [], set()
+        for city in top_cities:
+            country = city.get("country", "?")
+            if len(countries_seen) < num_countries and country not in countries_seen:
+                selected.append(city["name"])
+                countries_seen.add(country)
+        for city in top_cities:
+            if len(selected) >= target:
+                break
+            if city["name"] not in selected and city.get("country") in countries_seen:
+                selected.append(city["name"])
+    else:
+        selected = [c["name"] for c in top_cities[:target]]
+
+    if not selected:
+        selected = [top_cities[0]["name"]] if top_cities else ["Barcelona"]
+
+    base = duration // len(selected)
+    extra = duration % len(selected)
+    nights = {c: base + (1 if i < extra else 0) for i, c in enumerate(selected)}
     return selected, nights
 
 
-def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+def run_agent(preferences: Dict[str, Any], progress_callback=None) -> Tuple[str, Dict[str, Any]]:
     """
     Runs the EuroTrip planning pipeline.
 
@@ -111,6 +142,10 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     Returns:
         Tuple of formatted itinerary string and budget breakdown dict.
     """
+    def _cb(msg):
+        if progress_callback:
+            progress_callback(msg)
+
     memory = TripMemory()
     memory.save_preferences(preferences)
 
@@ -119,6 +154,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     logger.info("=" * 50)
 
     # ── Step 1: Score destinations ───────────────────────────────────────────
+    _cb("🗺️ Scoring 40 European destinations...")
     logger.info("Step 1/6 — Scoring destinations...")
     destinations_result = score_destinations(preferences)
     top_cities = destinations_result.get("top_destinations", [])
@@ -127,10 +163,12 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         raise RuntimeError("No destinations found. Check cities.json data file.")
 
     # ── Step 2: LLM decides cities + nights ─────────────────────────────────
+    _cb("🤖 AI selecting your cities and planning nights...")
     logger.info("Step 2/6 — LLM selecting cities and distributing nights...")
     selected_cities, nights_per_city = _llm_decide_cities(top_cities, preferences)
 
     # ── Step 2b: Fetch live Wikipedia + weather data ─────────────────────────
+    _cb(f"🌐 Fetching live data for {', '.join(selected_cities)}...")
     logger.info("Step 2b/6 — Fetching live Wikipedia & weather data...")
     web_data = enrich_cities(
         selected_cities,
@@ -140,6 +178,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     )
 
     # ── Step 3: Estimate transport ───────────────────────────────────────────
+    _cb(f"✈️ Estimating transport from {preferences['departure_city']}...")
     logger.info(f"Step 3/6 — Estimating transport: {preferences['departure_city']} → {selected_cities}")
     flights_result = estimate_transport(
         departure_city=preferences["departure_city"],
@@ -153,6 +192,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     )
 
     # ── Step 4: Estimate accommodation ──────────────────────────────────────
+    _cb("🏨 Estimating accommodation costs...")
     logger.info("Step 4/6 — Estimating accommodation...")
     accommodation_result = estimate_accommodation(
         cities=selected_cities,
@@ -162,6 +202,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     )
 
     # ── Step 5: Get activities ───────────────────────────────────────────────
+    _cb("🎭 AI generating activities for each city...")
     logger.info("Step 5/6 — Selecting activities...")
     activities_result = get_activities(
         cities=selected_cities,
@@ -170,6 +211,7 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     )
 
     # ── Step 6: Calculate budget ─────────────────────────────────────────────
+    _cb("💶 Calculating budget and pricing calendar...")
     logger.info("Step 6/6 — Calculating budget...")
     trip_plan = {
         "destinations": selected_cities,
@@ -208,9 +250,10 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         directness=preferences.get("directness", "allow_connections"),
     )
 
+    _cb("✅ Assembling your itinerary...")
     logger.info("Pipeline complete. Assembling final itinerary...")
     final_itinerary = assemble_itinerary(trip_plan, budget_result, preferences)
-    return final_itinerary, budget_result
+    return final_itinerary, budget_result, trip_plan
 
 
 def run_critic(itinerary: str, preferences: dict) -> str:

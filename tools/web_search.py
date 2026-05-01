@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 import requests
 
@@ -25,16 +26,16 @@ def get_wiki_summary(city_name: str) -> str:
         response.raise_for_status()
         data = response.json()
         extract = data.get("extract", "")
-        # Return first two sentences only
         sentences = extract.split(". ")
         summary = ". ".join(sentences[:2]).strip()
         if summary and not summary.endswith("."):
             summary += "."
+        image_url = data.get("thumbnail", {}).get("source", "")
         logger.info(f"Wikipedia summary fetched for {city_name}.")
-        return summary
+        return {"text": summary, "image_url": image_url}
     except Exception as e:
         logger.warning(f"Wikipedia fetch failed for {city_name}: {e}")
-        return f"{city_name} is a popular European travel destination."
+        return {"text": f"{city_name} is a popular European travel destination.", "image_url": ""}
 
 
 def get_weather_summary(city_name: str, lat: float, lon: float, month: int, year: int = 2025) -> dict:
@@ -113,28 +114,31 @@ def _weather_condition(avg_high: float, avg_precip: float) -> tuple:
 def enrich_cities(selected_cities: list, cities_data: list, travel_month: int, year: int = 2025) -> dict:
     """
     Fetches live Wikipedia descriptions and Open-Meteo weather data for each
-    selected city.
+    selected city. All cities are fetched in parallel to reduce wait time.
 
     Args:
         selected_cities: List of city name strings to enrich.
-        cities_data: Full list of city dicts from cities.json (for lat/lon).
+        cities_data: Full list of city dicts (for lat/lon).
         travel_month: Travel month as integer (1-12).
-        year: Historical archive year to use.
+        year: Historical archive year to use (capped at 2025).
 
     Returns:
         Dict mapping city name → {description, weather}.
     """
-    geo_map = {
-        city["name"]: city.get("geo", {}) for city in cities_data
-    }
-    enriched = {}
-    for city in selected_cities:
-        logger.info(f"Fetching live data for {city}...")
-        geo = geo_map.get(city, {})
+    geo_map = {city["name"]: city.get("geo", {}) for city in cities_data}
+
+    def _fetch(city_name):
+        logger.info(f"Fetching live data for {city_name}...")
+        geo = geo_map.get(city_name, {})
         lat = geo.get("lat", 48.0)
         lon = geo.get("lon", 16.0)
-        enriched[city] = {
-            "description": get_wiki_summary(city),
-            "weather": get_weather_summary(city, lat, lon, travel_month, year=year),
+        wiki = get_wiki_summary(city_name)
+        return city_name, {
+            "description": wiki["text"],
+            "image_url": wiki["image_url"],
+            "weather": get_weather_summary(city_name, lat, lon, travel_month, year=year),
         }
-    return enriched
+
+    workers = max(len(selected_cities), 1)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+        return dict(ex.map(_fetch, selected_cities))
