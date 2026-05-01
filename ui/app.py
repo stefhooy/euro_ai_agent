@@ -1,4 +1,5 @@
 import sys
+import traceback
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -119,40 +120,24 @@ with st.sidebar:
     st.caption(f"Trip ends: **{travel_end_date.strftime('%d %b %Y')}**")
 
     st.markdown("---")
-    st.markdown("**Trip Scope**")
-    trip_scope_input = st.radio(
-        "I want to...",
-        ["Multi-country trip", "Explore one country in depth"],
-        index=0,
-        label_visibility="collapsed",
+    num_countries_display = st.select_slider(
+        "Countries to visit",
+        options=["1", "2", "3", "4+"],
+        value="2",
     )
-
-    if trip_scope_input == "Multi-country trip":
-        num_countries_display = st.select_slider(
-            "Countries to visit",
-            options=["1", "2", "3", "4+"],
-            value="2",
+    num_countries_raw = COUNTRY_COUNT_MAP[num_countries_display]
+    # Realism guard: minimum 3 days per country
+    max_realistic = max(1, duration_input // 3)
+    if num_countries_raw < 99 and num_countries_raw > max_realistic:
+        st.warning(
+            f"⚠️ Visiting {num_countries_display} countries in {duration_input} days "
+            f"would be very rushed (< 3 days per country). "
+            f"We'll cap it at **{max_realistic}** for a realistic trip."
         )
-        num_countries_raw = COUNTRY_COUNT_MAP[num_countries_display]
-        # Realism guard: minimum 3 days per country
-        max_realistic = max(1, duration_input // 3)
-        if num_countries_raw < 99 and num_countries_raw > max_realistic:
-            st.warning(
-                f"⚠️ Visiting {num_countries_display} countries in {duration_input} days "
-                f"would be very rushed (< 3 days per country). "
-                f"We'll cap it at **{max_realistic}** for a realistic trip."
-            )
-            num_countries_final = max_realistic
-        else:
-            num_countries_final = num_countries_raw
-        trip_type_final = "international"
+        num_countries_final = max_realistic
     else:
-        num_countries_final = 1
-        trip_type_final = "domestic"
-        st.info(
-            f"The agent will look for cities within the same country as **{departure_input or 'your departure city'}**. "
-            "If no matching cities are found in our database, it will suggest nearby international options instead."
-        )
+        num_countries_final = num_countries_raw
+    trip_type_final = "international"
 
     st.markdown("---")
     activities_input = st.multiselect(
@@ -219,6 +204,7 @@ if plan_button:
         except Exception as e:
             progress_box.empty()
             st.error(f"An error occurred while planning the trip: {e}")
+            st.code(traceback.format_exc(), language="python")
 
 
 # ── Rich results UI ───────────────────────────────────────────────────────────
