@@ -44,6 +44,8 @@ def get_pricing_calendar(
     cities: list,
     travel_style: str,
     departure_city: str,
+    nights_per_city: dict = None,
+    fixed_costs: float = 0.0,
     return_city: str = None,
     transport_modes: list = None,
     route_priority: str = "best_balance",
@@ -52,11 +54,12 @@ def get_pricing_calendar(
     """
     Estimate route costs across all 12 months for a selected city list.
 
-    The calendar compares the variable components that use seasonal multipliers:
-    round-trip/inter-city flights and two estimated accommodation nights per city.
+    The calendar compares the same route across months. Transport and
+    accommodation are recalculated by month; fixed costs such as food and
+    activities can be included so the numbers stay comparable with the itinerary.
     """
     monthly_costs = []
-    nights_per_city = {city: 2 for city in cities}
+    nights_per_city = nights_per_city or {city: 2 for city in cities}
 
     for month, multiplier in MONTHLY_MULTIPLIERS.items():
         flights = estimate_transport(
@@ -78,6 +81,7 @@ def get_pricing_calendar(
         estimated_cost = (
             flights.get("total_flights_cost", 0)
             + accommodation.get("total_accommodation_cost", 0)
+            + fixed_costs
         )
         monthly_costs.append({
             "month": month,

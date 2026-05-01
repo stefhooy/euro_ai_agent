@@ -52,6 +52,7 @@ def _format_pricing_calendar(pricing_calendar: dict) -> list:
         return []
 
     max_cost = max((item.get("estimated_cost", 0) for item in monthly_costs), default=0)
+    min_cost = min((item.get("estimated_cost", 0) for item in monthly_costs), default=0)
     cheapest = pricing_calendar.get("cheapest_month", {})
     most_expensive = pricing_calendar.get("most_expensive_month", {})
     best_weather = pricing_calendar.get("best_weather_months", [])
@@ -60,11 +61,13 @@ def _format_pricing_calendar(pricing_calendar: dict) -> list:
         "============================================",
         "PRICING CALENDAR - BEST TIME TO VISIT",
         "============================================",
+        "Estimated full-trip cost by month, using the same route and nights.",
     ]
 
     for item in monthly_costs:
         cost = item.get("estimated_cost", 0)
-        filled = round((cost / max_cost) * 20) if max_cost else 0
+        cost_range = max_cost - min_cost
+        filled = 4 + round(((cost - min_cost) / cost_range) * 16) if cost_range else 12
         bar = "#" * filled + "." * (20 - filled)
         month_label = calendar.month_abbr[item.get("month", 1)]
         note = ""
@@ -72,7 +75,7 @@ def _format_pricing_calendar(pricing_calendar: dict) -> list:
             note = " (cheapest)"
         elif item.get("month") == most_expensive.get("month"):
             note = " (most expensive)"
-        lines.append(f"{month_label:<3}  {bar}  â‚¬{cost:,.0f}{note}")
+        lines.append(f"{month_label:<3}  {bar}  EUR {cost:,.0f}{note}")
 
     if best_weather:
         lines.extend([
@@ -93,8 +96,8 @@ def _format_transport_leg(leg: dict) -> str:
     duration = leg.get("duration_hours")
     duration_label = f", {duration:g}h" if isinstance(duration, (int, float)) else ""
     return (
-        f"{leg['from']} â†’ {leg['to']} by {mode} "
-        f"({direct_label}{duration_label}) â€” â‚¬{leg['cost_eur']:,.0f}"
+        f"{leg['from']} -> {leg['to']} by {mode} "
+        f"({direct_label}{duration_label}) - EUR {leg['cost_eur']:,.0f}"
     )
 
 
@@ -147,6 +150,22 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         "",
     ]
 
+    transport_modes = preferences.get("transport_modes", ["flight", "train", "bus"])
+    route_priority = preferences.get("route_priority", "best_balance").replace("_", " ")
+    directness = preferences.get("directness", "allow_connections").replace("_", " ")
+    itinerary.extend([
+        "How the agent chose this plan:",
+        "- Destinations were selected from the highest-scoring cities for your interests, budget, pace, and travel month.",
+        f"- Transport compared these modes: {', '.join(mode.title() for mode in transport_modes)}.",
+        f"- Route preference was set to {route_priority}; directness was set to {directness}.",
+        "- The selected transport for each leg is an estimate based on distance, time, price, seasonality, and comfort.",
+        "",
+        "Important: This is a planning proposal, not a booking confirmation.",
+        "Please verify live transport prices on sites like Skyscanner, Google Flights, Trainline, Omio, FlixBus, or airline/train/bus websites.",
+        "Please also verify accommodation on Booking.com or similar sites, and check museum/activity opening times and ticket prices before booking.",
+        "",
+    ])
+
     current_day_global = 1
 
     accommodation_data = trip_plan.get("accommodation", {}).get("city_breakdown", {})
@@ -163,7 +182,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         if outbound:
             itinerary.extend([
                 "--------------------------------------------",
-                f"✈️  OUTBOUND: {outbound['from']} → {outbound['to']} — €{outbound['cost_eur']:,.0f}",
+                f"OUTBOUND: {_format_transport_leg(outbound)}",
                 "--------------------------------------------",
                 "",
             ])
@@ -211,7 +230,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         # Inter-city flights into this city (skip outbound — shown above)
         for leg in flight_legs:
             if leg["to"] == city and leg["type"] == "inter_city":
-                itinerary.append(f"Flights: {leg['from']} → {leg['to']} — €{leg['cost_eur']:,.0f}")
+                itinerary.append(f"Transport: {_format_transport_leg(leg)}")
 
         itinerary.append("\nActivities:")
         city_acts = activities_data.get(city, {}).get("activities", [])
@@ -261,7 +280,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         if inbound:
             itinerary.extend([
                 "--------------------------------------------",
-                f"✈️  RETURN: {inbound['from']} → {inbound['to']} — €{inbound['cost_eur']:,.0f}",
+                f"FINAL LEG: {_format_transport_leg(inbound)}",
                 "--------------------------------------------",
                 "",
             ])
@@ -278,7 +297,7 @@ def assemble_itinerary(trip_plan: Dict[str, Any], budget_result: Dict[str, Any],
         "============================================",
         "💶 FULL COST BREAKDOWN",
         "============================================",
-        f"Flights:          €{f_cost:,.0f}",
+        f"Transport:        €{f_cost:,.0f}",
         f"Accommodation:    €{a_cost:,.0f}",
         f"Activities:       €{ac_cost:,.0f}",
         f"Food:             €{fd_cost:,.0f}",

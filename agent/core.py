@@ -23,16 +23,20 @@ LLM = ChatOllama(model="llama3.1:8b", temperature=0.3)
 
 
 def _get_travel_year(preferences: dict) -> int:
-    """Extract the selected travel year, falling back to a recent archive year."""
+    """Return an archive year for weather lookups, capped at 2024.
+
+    Open-Meteo archive only holds completed past data, so we never request
+    a year beyond 2025 regardless of the user's chosen travel date.
+    """
     start_date = preferences.get("travel_start_date")
     if isinstance(start_date, date):
-        return start_date.year
+        return min(start_date.year, 2025)
     if isinstance(start_date, str):
         try:
-            return datetime.fromisoformat(start_date).year
+            return min(datetime.fromisoformat(start_date).year, 2025)
         except ValueError:
-            logger.warning(f"Could not parse travel_start_date '{start_date}', using 2024 weather reference.")
-    return 2024
+            logger.warning(f"Could not parse travel_start_date '{start_date}', using 2025 weather reference.")
+    return 2025
 
 
 def _llm_decide_cities(top_cities: list, preferences: dict) -> Tuple[list, dict]:
@@ -196,6 +200,8 @@ def run_agent(preferences: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         cities=trip_plan["destinations"],
         travel_style=trip_plan["travel_style"],
         departure_city=preferences["departure_city"],
+        nights_per_city=trip_plan["nights_per_city"],
+        fixed_costs=budget_result.get("activities_cost", 0) + budget_result.get("food_cost", 0),
         return_city=preferences.get("return_city", preferences["departure_city"]),
         transport_modes=preferences.get("transport_modes"),
         route_priority=preferences.get("route_priority", "best_balance"),

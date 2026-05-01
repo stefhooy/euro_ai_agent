@@ -37,7 +37,7 @@ def get_wiki_summary(city_name: str) -> str:
         return f"{city_name} is a popular European travel destination."
 
 
-def get_weather_summary(city_name: str, lat: float, lon: float, month: int, year: int = 2024) -> dict:
+def get_weather_summary(city_name: str, lat: float, lon: float, month: int, year: int = 2025) -> dict:
     """
     Fetches average temperature and precipitation for a city in a given month
     using the Open-Meteo historical weather archive (free, no API key).
@@ -110,7 +110,7 @@ def _weather_condition(avg_high: float, avg_precip: float) -> tuple:
         return ("Cold", "🧥") if (avg_precip or 0) < 3 else ("Cold & Wet", "🌨️")
 
 
-def enrich_cities(selected_cities: list, cities_data: list, travel_month: int, year: int = 2024) -> dict:
+def enrich_cities(selected_cities: list, cities_data: list, travel_month: int, year: int = 2025) -> dict:
     """
     Fetches live Wikipedia descriptions and Open-Meteo weather data for each
     selected city.
