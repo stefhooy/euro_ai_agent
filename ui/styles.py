@@ -35,6 +35,42 @@ section[data-testid="stSidebar"] {
     border-radius: 14px !important;
     backdrop-filter: blur(6px);
 }
+/* Multiselect tag pills */
+[data-baseweb="tag"] {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    border-radius: 6px !important;
+}
+[data-baseweb="tag"] span { color: #ffffff !important; }
+
+/* City / itinerary cards — subtle lift on hover */
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: rgba(13, 148, 136, 0.35) !important;
+    box-shadow: 0 4px 24px rgba(13, 148, 136, 0.10);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Progress bars — turquoise fill */
+[data-testid="stProgressBar"] > div > div {
+    background: linear-gradient(90deg, #0d9488, #06b6d4) !important;
+    border-radius: 4px;
+}
+
+/* Info / success / warning banners — slightly rounded */
+[data-testid="stAlert"] { border-radius: 10px !important; }
+
+/* Expander header — slightly larger text */
+[data-testid="stExpander"] summary {
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+/* Caption text — softer colour */
+.stMarkdown small, [data-testid="stCaptionContainer"] p {
+    color: #94a3b8 !important;
+    font-size: 0.8rem !important;
+}
 """
 
 

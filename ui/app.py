@@ -19,8 +19,8 @@ from agent.core import run_agent
 
 # Page config must be the first Streamlit call.
 st.set_page_config(
-    page_title="EuroTrip Agent",
-    page_icon="🌍",
+    page_title="Hermes — AI Travel Planner",
+    page_icon="🪽",
     layout="wide",
     initial_sidebar_state="expanded",
 )

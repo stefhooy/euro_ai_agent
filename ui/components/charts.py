@@ -53,7 +53,7 @@ def render_pricing_calendar(pricing_cal: dict) -> None:
         color="highlight",
         color_discrete_map={
             "Cheapest ✅": "#22c55e",
-            "Most Expensive ❌": "#0d9488",
+            "Most Expensive ❌": "#ff1100",
             "Normal": "#3b82f6",
         },
         labels={"estimated_cost": "Est. Cost (€)", "month_name": ""},
