@@ -233,6 +233,12 @@ def run_agent(preferences: Dict[str, Any], progress_callback=None) -> Tuple[str,
     # ── Step 6: Calculate budget ─────────────────────────────────────────────
     _cb("💶 Calculating budget and pricing calendar...")
     logger.info("Step 6/6 — Calculating budget...")
+    # Index scored city data by name so we can display agent reasoning in the UI.
+    score_map = {c["name"]: c for c in top_cities}
+    destination_scores = {
+        city: score_map[city] for city in selected_cities if city in score_map
+    }
+
     trip_plan = {
         "destinations": selected_cities,
         "nights_per_city": nights_per_city,
@@ -241,6 +247,7 @@ def run_agent(preferences: Dict[str, Any], progress_callback=None) -> Tuple[str,
         "accommodation": accommodation_result,
         "activities": activities_result,
         "web_data": web_data,
+        "destination_scores": destination_scores,
     }
     budget_result = calculate_budget(
         trip_plan=trip_plan,
