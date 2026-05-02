@@ -83,7 +83,12 @@ PACE_MAP = {
 TRANSPORT_MODE_MAP = {"Flight": "flight", "Train": "train", "Bus": "bus"}
 ROUTE_PRIORITY_MAP = {"Best balance": "best_balance", "Cheapest": "cheapest", "Fastest": "fastest"}
 DIRECTNESS_MAP = {"Allow connections": "allow_connections", "Direct only": "direct_only"}
-COUNTRY_COUNT_MAP = {"1": 1, "2": 2, "3": 3, "4+": 99}
+COUNTRY_COUNT_MAP = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6}
+
+# Minimum all-in daily cost (accommodation + food + activities) and flat transport
+# used to warn users when their budget is unrealistic for the chosen travel style.
+MIN_DAILY = {"backpacker": 55, "mid_range": 130, "luxury": 320}
+MIN_TRANSPORT = {"backpacker": 200, "mid_range": 450, "luxury": 950}
 
 # ── Session state ─────────────────────────────────────────────────────────────
 for key, default in [
@@ -116,6 +121,22 @@ with st.sidebar:
     return_input = st.text_input("Return / Ending City", value=departure_input)
     style_input = st.selectbox("Travel Style", options=list(STYLE_MAP.keys()), index=1)
 
+    # ── Real-time budget feasibility check ────────────────────────────────
+    _style_key = STYLE_MAP[style_input]
+    _min_budget = MIN_DAILY[_style_key] * duration_input + MIN_TRANSPORT[_style_key]
+    if budget_input < _min_budget * 0.55:
+        st.error(
+            f"⛔ Budget too low — a {duration_input}-day **{style_input.lower()}** trip "
+            f"typically costs at least **€{_min_budget:,.0f}**. "
+            f"Either increase your budget or switch to a cheaper travel style."
+        )
+    elif budget_input < _min_budget * 0.80:
+        st.warning(
+            f"⚠️ Tight budget — a {duration_input}-day **{style_input.lower()}** trip "
+            f"usually needs around **€{_min_budget:,.0f}**. "
+            f"The agent will try to replan, but options will be limited."
+        )
+
     travel_start_input = st.date_input(
         "Travel Start Date",
         value=st.session_state.travel_start_date,
@@ -128,17 +149,18 @@ with st.sidebar:
     st.markdown("---")
     num_countries_display = st.select_slider(
         "Countries to visit",
-        options=["1", "2", "3", "4+"],
+        options=["1", "2", "3", "4", "5", "6"],
         value="2",
     )
     num_countries_raw = COUNTRY_COUNT_MAP[num_countries_display]
-    # Realism guard: minimum 3 days per country
-    max_realistic = max(1, duration_input // 3)
-    if num_countries_raw < 99 and num_countries_raw > max_realistic:
+    # Realism guard: need at least 3 days per country to see anything meaningful.
+    # Maximum is capped at 6 regardless of duration.
+    max_realistic = min(6, max(1, duration_input // 3))
+    if num_countries_raw > max_realistic:
         st.warning(
-            f"⚠️ Visiting {num_countries_display} countries in {duration_input} days "
-            f"would be very rushed (< 3 days per country). "
-            f"We'll cap it at **{max_realistic}** for a realistic trip."
+            f"⚠️ {num_countries_display} countries in {duration_input} days "
+            f"is less than 3 days per country — very rushed. "
+            f"Capping at **{max_realistic}** for a realistic trip."
         )
         num_countries_final = max_realistic
     else:
@@ -166,6 +188,7 @@ with st.sidebar:
         plan_button = st.button("Plan My Trip", use_container_width=True, type="primary")
     with col2:
         st.button("Reset", on_click=reset_app, use_container_width=True)
+    st.caption("Estimates only. Always verify prices on Skyscanner, Booking.com, or Airbnb before booking.")
 
 # ── Plan button ───────────────────────────────────────────────────────────────
 if plan_button:
@@ -368,6 +391,38 @@ if st.session_state.itinerary and st.session_state.budget_result:
     c3.metric("Buffer", f"€{budget_res.get('buffer', 0):,.0f}")
     c4.metric("Destinations", str(len(destinations)))
 
+    # ── Disclaimer ────────────────────────────────────────────────────────
+    with st.expander("ℹ️ About these estimates — please read before booking"):
+        st.markdown("""
+**These are planning estimates, not real prices.**
+
+All costs shown are computer-generated approximations based on historical
+averages and seasonal patterns. They are designed to help you plan a
+realistic budget, not to replace live booking platforms.
+
+**Before booking anything, always verify on:**
+- ✈️ **Flights** — [Skyscanner](https://www.skyscanner.net), [Google Flights](https://flights.google.com), or directly with the airline
+- 🏨 **Hotels & rentals** — [Booking.com](https://www.booking.com), [Airbnb](https://www.airbnb.com), or [Hotels.com](https://www.hotels.com)
+- 🚆 **Trains & buses** — [Trainline](https://www.thetrainline.com), [Omio](https://www.omio.com), or [FlixBus](https://www.flixbus.com)
+- 🎭 **Activities** — official attraction websites or [GetYourGuide](https://www.getyourguide.com)
+
+**Where the data comes from:**
+
+| What | Source | Type |
+|---|---|---|
+| City descriptions | Wikipedia REST API | Live |
+| Weather forecasts | Open-Meteo historical archive | Live (2025 data) |
+| Transport costs | Distance-based model + seasonal multipliers | Estimated |
+| Accommodation costs | Regional averages by travel style + season | Estimated |
+| Activity suggestions | Local AI (llama3.1:8b) | AI-generated |
+| City scoring | Curated dataset of 40 European cities | Static |
+| Pricing calendar | Same transport + accommodation model, all 12 months | Estimated |
+
+Prices can vary significantly depending on how far in advance you book,
+airline sales, hotel availability, and local events. Budget an extra
+10–15% as a safety buffer beyond what is shown here.
+""")
+
     st.markdown("---")
 
     # ── Main layout: cards | charts ────────────────────────────────────────
@@ -479,14 +534,18 @@ else:
                margin:0 0 16px;line-height:1.15;">
         EuroTrip Agent
     </h1>
-    <p style="font-size:1.1rem;color:#94a3b8;max-width:500px;line-height:1.75;margin:0 0 36px;">
+    <p style="font-size:1.1rem;color:#94a3b8;max-width:560px;line-height:1.75;margin:0 0 36px;">
         Set your travel preferences in the sidebar and let the AI build a personalised
         multi-city European itinerary with live weather, cost estimates, and a pricing calendar.
+        Visit <strong style="color:#93c5fd;">1 to 6 countries</strong> — the agent enforces
+        a minimum of 3 days per country so every stop is worth the journey.
+        Six countries is the cap: even on a 30-day trip, more than that becomes a rushed
+        airport-to-airport sprint rather than actual travel.
     </p>
     <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;
                 color:#60a5fa;font-size:0.92rem;font-weight:500;letter-spacing:0.02em;">
-        <span>✈️&nbsp; 40+ cities</span>
-        <span>🏳️&nbsp; Domestic or international</span>
+        <span>✈️&nbsp; 40+ European cities</span>
+        <span>🗺️&nbsp; 1–6 countries per trip</span>
         <span>💶&nbsp; Budget-aware</span>
         <span>🌤️&nbsp; Live weather</span>
         <span>📅&nbsp; Pricing calendar</span>

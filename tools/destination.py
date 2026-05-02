@@ -143,6 +143,10 @@ def score_destinations(preferences: dict) -> dict:
         city_data["reasons"] = reasons
         scored_cities.append(city_data)
 
-    top_cities = sorted(scored_cities, key=lambda x: x["score"], reverse=True)[:5]
+    # Return a larger candidate pool when many countries are requested so the
+    # city selector has enough diversity to pick one city per country.
+    num_countries = preferences.get("num_countries", 4)
+    pool_size = max(10, num_countries * 3)
+    top_cities = sorted(scored_cities, key=lambda x: x["score"], reverse=True)[:pool_size]
     logger.info(f"Top {len(top_cities)} destinations selected from {len(cities)} cities.")
     return {"top_destinations": top_cities, "domestic_fallback": domestic_fallback}

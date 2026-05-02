@@ -40,20 +40,26 @@ def _get_travel_year(preferences: dict) -> int:
 
 
 def _llm_decide_cities(top_cities: list, preferences: dict) -> Tuple[list, dict]:
-    """Ask the LLM to pick cities and distribute nights, then parse the result."""
+    """Ask the LLM to pick cities and distribute nights, then parse the result.
+
+    When num_countries is specified the deterministic Python fallback is used
+    directly — small LLMs reliably ignore multi-constraint prompts, so we don't
+    waste an LLM call on something Python handles correctly every time.
+    """
+    num_countries = preferences.get("num_countries", 4)
+
+    # Bypass the LLM entirely when a specific country count is requested.
+    # The Python fallback enforces the constraint deterministically.
+    if num_countries < 99:
+        logger.info(
+            f"num_countries={num_countries} — using Python fallback for "
+            "guaranteed country diversity (LLM ignored for city selection)."
+        )
+        return _fallback_city_distribution(top_cities, preferences)
+
     duration = preferences["duration"]
     pace = preferences.get("pace", "moderate")
-    num_countries = preferences.get("num_countries", 99)
-
     city_names = [c["name"] for c in top_cities]
-
-    if num_countries < 99:
-        country_rule = (
-            f"- Choose cities from EXACTLY {num_countries} different "
-            f"countr{'y' if num_countries == 1 else 'ies'}."
-        )
-    else:
-        country_rule = "- You may choose cities from any number of countries."
 
     prompt = f"""You are a travel planner. Given a {duration}-day trip at a '{pace}' pace,
 choose how many cities to visit and how many nights to spend in each.
@@ -66,7 +72,7 @@ Rules:
 - fast pace: pick 4 cities
 - Total nights must add up to exactly {duration}
 - Minimum 1 night per city
-{country_rule}
+- Choose cities from different countries where possible
 
 Reply ONLY with valid JSON like this example (no explanation, no markdown):
 {{"cities": ["Barcelona", "Paris"], "nights": {{"Barcelona": 5, "Paris": 5}}}}"""
@@ -75,7 +81,6 @@ Reply ONLY with valid JSON like this example (no explanation, no markdown):
     response = LLM.invoke([HumanMessage(content=prompt)])
     raw = response.content.strip()
 
-    # Extract JSON even if the model wraps it in markdown
     if "```" in raw:
         raw = raw.split("```")[1].replace("json", "").strip()
 
@@ -83,26 +88,10 @@ Reply ONLY with valid JSON like this example (no explanation, no markdown):
         data = json.loads(raw)
         cities = data["cities"]
         nights = data["nights"]
-        # Validate total nights — fix rounding errors
         total = sum(nights.values())
         if total != duration:
             diff = duration - total
             nights[cities[0]] += diff
-
-        # Validate country constraint: LLMs often pick the right cities but
-        # ignore the "exactly N countries" rule. If violated, fall back to
-        # the deterministic Python distribution which enforces it correctly.
-        if num_countries < 99:
-            city_country_map = {c["name"]: c.get("country", "") for c in top_cities}
-            unique_countries = {city_country_map.get(c, "") for c in cities}
-            unique_countries.discard("")
-            if len(unique_countries) != num_countries:
-                logger.warning(
-                    f"LLM chose cities from {len(unique_countries)} countries "
-                    f"(expected {num_countries}). Using fallback distribution."
-                )
-                return _fallback_city_distribution(top_cities, preferences)
-
         logger.info(f"LLM chose: {cities} with nights {nights}")
         return cities, nights
     except Exception as e:
@@ -111,22 +100,31 @@ Reply ONLY with valid JSON like this example (no explanation, no markdown):
 
 
 def _fallback_city_distribution(top_cities: list, preferences: dict) -> Tuple[list, dict]:
-    """Pure Python fallback if LLM response fails to parse."""
+    """Pure Python fallback — always respects the country-count constraint."""
     duration = preferences["duration"]
     pace = preferences.get("pace", "moderate")
-    num_countries = preferences.get("num_countries", 99)
+    num_countries = preferences.get("num_countries", 4)
     pace_map = {"slow": 2, "moderate": 3, "fast": 4}
-    target = min(pace_map.get(pace, 3), len(top_cities))
+    pace_target = pace_map.get(pace, 3)
+
+    # City count must be at least num_countries (one city per requested country).
+    # e.g. 4 countries + moderate pace (3 cities) → need 4 cities, not 3.
+    if num_countries < 99:
+        target = min(max(pace_target, num_countries), len(top_cities))
+    else:
+        target = min(pace_target, len(top_cities))
 
     if num_countries < 99:
-        # First pick one city per country up to the limit,
-        # then fill remaining slots from already-chosen countries.
+        # Phase 1: pick exactly one city per unique country up to num_countries.
         selected, countries_seen = [], set()
         for city in top_cities:
+            if len(countries_seen) >= num_countries:
+                break
             country = city.get("country", "?")
-            if len(countries_seen) < num_countries and country not in countries_seen:
+            if country not in countries_seen:
                 selected.append(city["name"])
                 countries_seen.add(country)
+        # Phase 2: fill remaining slots with more cities from those same countries.
         for city in top_cities:
             if len(selected) >= target:
                 break
@@ -176,6 +174,13 @@ def run_agent(preferences: Dict[str, Any], progress_callback=None) -> Tuple[str,
 
     if not top_cities:
         raise RuntimeError("No destinations found. Check cities.json data file.")
+
+    # Never recommend the departure city as a destination.
+    departure_lower = preferences.get("departure_city", "").strip().lower()
+    top_cities = [c for c in top_cities if c["name"].strip().lower() != departure_lower]
+
+    if not top_cities:
+        raise RuntimeError("All top destinations matched the departure city. Try a different departure.")
 
     # ── Step 2: LLM decides cities + nights ─────────────────────────────────
     _cb("🤖 AI selecting your cities and planning nights...")
