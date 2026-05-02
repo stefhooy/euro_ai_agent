@@ -21,6 +21,78 @@ PRIORITY_WEIGHTS = {
 
 DEFAULT_MODES = ["flight", "train", "bus"]
 
+# ── Geographic constraints ─────────────────────────────────────────────────────
+
+# Cities on islands with no surface link to mainland Europe — flights only.
+FLIGHT_ONLY_CITIES = {"Reykjavik", "Valletta", "Santorini"}
+
+# Cities in the British Isles, separated from continental Europe by the
+# English Channel / Irish Sea. Buses cannot cross; trains only via Eurostar.
+BRITISH_ISLES_CITIES = {"London", "Manchester", "Edinburgh", "Glasgow", "Dublin"}
+
+# The only train routes that cross the Channel Tunnel (Eurostar service).
+# All other British Isles ↔ mainland routes require a flight.
+EUROSTAR_PAIRS = {
+    frozenset({"London", "Paris"}),
+    frozenset({"London", "Brussels"}),
+    frozenset({"London", "Amsterdam"}),
+}
+
+# Cities north of the Alps (bus/train routes crossing to southern cities are
+# slower due to mountain passes and tunnels — apply a time penalty).
+_NORTH_OF_ALPS = {
+    "Paris", "Munich", "Vienna", "Berlin", "Prague", "Zurich", "Geneva",
+    "Brussels", "Amsterdam", "Copenhagen", "Stockholm", "Oslo", "Helsinki",
+    "Warsaw", "Krakow", "Budapest", "Bratislava", "Tallinn", "Riga", "Vilnius",
+    "Ljubljana", "Hamburg",
+}
+_SOUTH_OF_ALPS = {"Milan", "Venice", "Florence", "Rome", "Nice", "Dubrovnik", "Split"}
+
+# Cities north of the Pyrenees (routes to/from Spain are longer due to mountain passes).
+_NORTH_OF_PYRENEES = {"Paris", "Brussels", "Amsterdam", "Lyon"}
+_SOUTH_OF_PYRENEES = {"Barcelona", "Madrid", "Seville", "Valencia", "Bilbao", "Malaga"}
+
+
+def _feasible_modes(origin: str, destination: str, requested_modes: list) -> list:
+    """Remove transport modes that are geographically impossible for this route.
+
+    Rules:
+    - Island cities (Iceland, Malta, Santorini): flight only.
+    - British Isles ↔ mainland: no bus; train only if Eurostar route.
+    - All other routes: all requested modes remain available.
+    """
+    if origin in FLIGHT_ONLY_CITIES or destination in FLIGHT_ONLY_CITIES:
+        return ["flight"] if "flight" in requested_modes else ["flight"]
+
+    origin_british = origin in BRITISH_ISLES_CITIES
+    dest_british = destination in BRITISH_ISLES_CITIES
+    if origin_british != dest_british:  # one side is British Isles, other is mainland
+        modes = [m for m in requested_modes if m != "bus"]
+        pair = frozenset({origin, destination})
+        if pair not in EUROSTAR_PAIRS:
+            modes = [m for m in modes if m != "train"]
+        return modes or ["flight"]
+
+    return requested_modes
+
+
+def _mountain_time_multiplier(origin: str, destination: str) -> float:
+    """Return a surface-travel time multiplier for routes crossing mountain ranges.
+
+    Tunnels and passes exist, so these routes are possible — just slower.
+    Applied only to bus and train, not flights.
+    """
+    multiplier = 1.0
+    crosses_alps = (origin in _NORTH_OF_ALPS and destination in _SOUTH_OF_ALPS) or \
+                   (origin in _SOUTH_OF_ALPS and destination in _NORTH_OF_ALPS)
+    crosses_pyrenees = (origin in _NORTH_OF_PYRENEES and destination in _SOUTH_OF_PYRENEES) or \
+                       (origin in _SOUTH_OF_PYRENEES and destination in _NORTH_OF_PYRENEES)
+    if crosses_alps:
+        multiplier *= 1.30  # alpine tunnels add ~30% to surface travel time
+    if crosses_pyrenees:
+        multiplier *= 1.20  # mountain passes add ~20%
+    return multiplier
+
 KNOWN_DEPARTURE_COORDS = {
     "london": {"lat": 51.5072, "lon": -0.1276},
     "dublin": {"lat": 53.3498, "lon": -6.2603},
@@ -69,8 +141,19 @@ def _distance_km(origin: dict, destination: dict) -> float:
     return radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def _mode_options(distance_km: float, travel_month: int, travel_style: str, modes: list, directness: str) -> list:
-    """Generate feasible transport options for one route leg."""
+def _mode_options(
+    distance_km: float,
+    travel_month: int,
+    travel_style: str,
+    modes: list,
+    directness: str,
+    mountain_multiplier: float = 1.0,
+) -> list:
+    """Generate feasible transport options for one route leg.
+
+    mountain_multiplier is applied to bus and train travel times only,
+    reflecting slower speeds through alpine tunnels and mountain passes.
+    """
     multiplier = get_month_multiplier(travel_month)
     style_multiplier = STYLE_MULTIPLIERS.get(travel_style, 1.0)
     allow_connections = directness != "direct_only"
@@ -98,7 +181,7 @@ def _mode_options(distance_km: float, travel_month: int, travel_style: str, mode
     if "train" in modes and distance_km <= 1400:
         direct_available = distance_km <= 650
         train_cost = (18 + distance_km * 0.16) * (0.80 + multiplier * 0.20) * style_multiplier
-        train_hours = 0.6 + distance_km / 145
+        train_hours = (0.6 + distance_km / 145) * mountain_multiplier
         if direct_available or allow_connections:
             options.append({
                 "mode": "train",
@@ -111,7 +194,7 @@ def _mode_options(distance_km: float, travel_month: int, travel_style: str, mode
     if "bus" in modes and distance_km <= 1700:
         direct_available = distance_km <= 900
         bus_cost = (12 + distance_km * 0.07) * (0.90 + multiplier * 0.10) * max(0.75, style_multiplier - 0.15)
-        bus_hours = 1.0 + distance_km / 78
+        bus_hours = (1.0 + distance_km / 78) * mountain_multiplier
         if direct_available or allow_connections:
             options.append({
                 "mode": "bus",
@@ -193,8 +276,10 @@ def estimate_transport(
         origin_geo = _coordinates_for(origin, coord_map)
         destination_geo = _coordinates_for(destination, coord_map)
         distance = _distance_km(origin_geo, destination_geo)
+        viable_modes = _feasible_modes(origin, destination, modes)
+        mt_mult = _mountain_time_multiplier(origin, destination)
         options = _score_options(
-            _mode_options(distance, travel_month, travel_style, modes, directness),
+            _mode_options(distance, travel_month, travel_style, viable_modes, directness, mt_mult),
             route_priority,
         )
 
