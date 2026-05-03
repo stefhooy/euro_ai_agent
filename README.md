@@ -295,37 +295,24 @@ All of these are set in the sidebar before clicking "Plan My Trip":
 
 ```
 euro_ai_agent/
+    .github/
+        workflows/
+            test.yml              - GitHub Actions CI workflow for running tests
+
+    .streamlit/
+        config.toml               - Streamlit theme configuration
+
     agent/
-        core.py           - main planning pipeline and city selection logic
-        memory.py         - simple trip memory store
-        planner.py        - itinerary text assembly
-    tools/
-        accommodation.py  - nightly cost estimator
-        activities.py     - LLM activity generator with fallback
-        budget.py         - total cost aggregation and over-budget detection
-        city_data.py      - city profile builder from seed data
-        destination.py    - destination scoring engine
-        pricing_calendar.py - 12-month cost comparison
-        replanner.py      - automatic budget replanning
-        seasonality.py    - monthly pricing multipliers
-        transport.py      - multi-mode transport estimator with geographic rules
-        web_search.py     - Wikipedia and Open-Meteo API calls
-    ui/
-        app.py            - slim entry point (~100 lines)
-        config.py         - option maps and budget constants
-        sidebar.py        - sidebar widget rendering
-        styles.py         - global CSS injection
-        components/
-            agent_thinking.py - "How Hermes planned this" panel
-            cards.py          - city itinerary cards
-            charts.py         - cost pie and pricing calendar charts
-            hero.py           - landing page
-            results.py        - results page orchestrator
-        assets/
-            hermes.png        - agent portrait for the hero page
-            web_euro.png      - logo used in sidebar and browser tab
+        __init__.py
+        core.py                   - main planning pipeline and city selection logic
+        memory.py                 - simple trip memory store
+        planner.py                - itinerary text assembly
+
     data/
-        european_cities_seed.json - 40 city profiles with coordinates and tags
+        activity_costs.json       - activity pricing data
+        cities.json               - city data used by the app
+        european_cities_seed.json - seed city profiles with coordinates and tags
+
     tests/
         test_accommodation.py
         test_activities.py
@@ -342,10 +329,47 @@ euro_ai_agent/
         test_seasonality.py
         test_transport.py
         test_web_search.py
-    .streamlit/
-        config.toml       - Streamlit theme (primary colour, background)
-    main.py               - CLI entry point (non-Streamlit)
-    requirements.txt      - Python dependencies
+
+    tools/
+        __init__.py
+        accommodation.py          - nightly cost estimator
+        activities.py             - LLM activity generator with fallback
+        budget.py                 - total cost aggregation and over-budget detection
+        city_data.py              - city profile builder from seed data
+        destination.py            - destination scoring engine
+        flights.py                - flight cost / route estimation helpers
+        pricing_calendar.py       - 12-month cost comparison
+        replanner.py              - automatic budget replanning
+        seasonality.py            - monthly pricing multipliers
+        transport.py              - multi-mode transport estimator with geographic rules
+        web_search.py             - Wikipedia and Open-Meteo API calls
+
+    ui/
+        __init__.py
+        app.py                    - Streamlit app entry point
+        config.py                 - option maps and budget constants
+        sidebar.py                - sidebar widget rendering
+        styles.py                 - global CSS injection
+
+        assets/
+            hermes.png            - agent portrait for the hero page
+            snippet.png           - UI/media asset
+            web_euro.png          - logo used in sidebar and browser tab
+
+        components/
+            __init__.py
+            agent_thinking.py     - "How Hermes planned this" panel
+            cards.py              - city itinerary cards
+            charts.py             - cost pie and pricing calendar charts
+            hero.py               - landing page
+            results.py            - results page orchestrator
+
+    .gitignore
+    __init__.py
+    main.py                       - CLI entry point
+    pyproject.toml                - Python project metadata and pytest config
+    README.md
+    requirements.txt              - Python dependencies
 ```
 
 ---

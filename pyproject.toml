@@ -5,10 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hermes-travel-agent"
 version = "1.0.0"
-description = (
-    "AI-powered European travel planner with local LLM, "
-    "live weather data, and multi-mode transport comparison."
-)
+description = "AI-powered European travel planner with local LLM, live weather data, and multi-mode transport comparison."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
