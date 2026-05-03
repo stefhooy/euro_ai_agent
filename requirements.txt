@@ -1,10 +1,19 @@
-langgraph>=0.2.0
+# Core agent
 langchain>=0.3.0
 langchain-core>=0.3.0
 langchain-ollama>=0.2.0
+
+# Web UI
 streamlit>=1.40.0
+Pillow>=10.0.0
+
+# Data and charts
 pandas>=2.0.0
 plotly>=5.0.0
+
+# HTTP and environment
 requests>=2.31.0
-httpx>=0.27.0
 python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.0.0
