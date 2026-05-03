@@ -78,3 +78,19 @@ def test_score_destinations_domestic_filter():
     if top:  # Only assert if seed has Spanish cities
         countries = {c["country"] for c in top}
         assert countries == {"Spain"} or result.get("domestic_fallback")
+
+
+def test_score_destinations_international_excludes_departure_country():
+    """International trips do not recommend the departure country."""
+    preferences = {
+        "budget": 3000,
+        "duration": 7,
+        "travel_style": "mid_range",
+        "activity_preferences": ["history"],
+        "travel_month": 6,
+        "trip_type": "international",
+        "departure_city": "Madrid",
+    }
+    result = score_destinations(preferences)
+    countries = {c["country"] for c in result["top_destinations"]}
+    assert "Spain" not in countries

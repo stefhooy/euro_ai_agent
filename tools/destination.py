@@ -46,7 +46,8 @@ def score_destinations(preferences: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         preferences: Dict containing budget, duration, travel_style,
                      activity_preferences, travel_month, and optionally
-                     trip_type and departure_city.
+                     trip_type and departure_city. International trips
+                     exclude cities in the departure country when known.
 
     Returns:
         Dict with 'top_destinations' (scored city list) and
@@ -72,8 +73,12 @@ def score_destinations(preferences: Dict[str, Any]) -> Dict[str, Any]:
 
     domestic_fallback = False
 
+    dep_country = (
+        _get_departure_country(departure_city, cities)
+        if departure_city else ""
+    )
+
     if trip_type == "domestic" and departure_city:
-        dep_country = _get_departure_country(departure_city, cities)
         if dep_country:
             domestic_cities = [
                 c for c in cities if c.get("country") == dep_country
@@ -96,6 +101,22 @@ def score_destinations(preferences: Dict[str, Any]) -> Dict[str, Any]:
                 "Using all destinations."
             )
             domestic_fallback = True
+    elif trip_type == "international" and dep_country:
+        international_cities = [
+            c for c in cities if c.get("country") != dep_country
+        ]
+        if international_cities:
+            logger.info(
+                f"International trip: excluding {dep_country} "
+                f"({len(cities) - len(international_cities)} "
+                "domestic cities removed)."
+            )
+            cities = international_cities
+        else:
+            logger.warning(
+                f"No international seed cities outside '{dep_country}'. "
+                "Using all destinations."
+            )
 
     scored_cities: List[Dict[str, Any]] = []
 
@@ -156,4 +177,7 @@ def score_destinations(preferences: Dict[str, Any]) -> Dict[str, Any]:
         f"Top {len(top_cities)} destinations selected "
         f"from {len(cities)} cities."
     )
-    return {"top_destinations": top_cities, "domestic_fallback": domestic_fallback}
+    return {
+        "top_destinations": top_cities,
+        "domestic_fallback": domestic_fallback,
+    }

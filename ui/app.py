@@ -20,6 +20,7 @@ from agent.core import run_agent
 
 # Page config must be the first Streamlit call.
 _icon_path = Path(__file__).parent / "assets" / "web_euro.png"
+_hermes_path = Path(__file__).parent / "assets" / "hermes.png"
 _page_icon = Image.open(_icon_path) if _icon_path.exists() else "\U0001fa75"
 st.set_page_config(
     page_title="Hermes - Euro AI Travel Planner",
@@ -49,6 +50,16 @@ def _reset_app() -> None:
         st.session_state[key] = None
 
 
+def _render_hermes_progress(slot, message: str, width: int = 36) -> None:
+    with slot.container():
+        img_col, text_col = st.columns([1, 12])
+        with img_col:
+            if _hermes_path.exists():
+                st.image(str(_hermes_path), width=width)
+        with text_col:
+            st.markdown(f"**{message}**")
+
+
 # Sidebar
 plan_button, preferences = render_sidebar(reset_callback=_reset_app)
 
@@ -69,9 +80,13 @@ if plan_button:
         }
 
         with st.status(
-            "\U0001fa75  Hermes is thinking and planning your trip...",
+            "Hermes is thinking and planning your trip...",
             expanded=True,
         ) as _status:
+            _render_hermes_progress(
+                st.empty(),
+                "Hermes is thinking and planning your trip...",
+            )
             st.markdown(
                 "**Please remain patient** - Hermes is consulting "
                 "a local AI model and fetching live data. "
@@ -90,7 +105,7 @@ if plan_button:
                         f"Step {_step[0]} of {_TOTAL_STEPS}"
                     ),
                 )
-                _msg.info(f"\U0001fa75  {msg}")
+                _render_hermes_progress(_msg, msg, width=36)
 
             try:
                 itinerary, budget_result, trip_plan = run_agent(
