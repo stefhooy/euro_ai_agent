@@ -1,7 +1,7 @@
 import streamlit as st
 
 _CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
 
 .stApp {
     background: linear-gradient(150deg, #0b1437 0%, #0f2255 45%, #0c2f52 75%, #091e3a 100%);

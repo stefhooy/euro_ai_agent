@@ -39,8 +39,10 @@ def render_hero() -> None:
     with col_intro:
         st.markdown(
             "<h1 style='"
-            "font-family:Playfair Display,Georgia,serif;"
+            "font-family:Cinzel,Georgia,serif;"
             "font-size:clamp(2.4rem,5vw,3.6rem);"
+            "font-weight:900;"
+            "letter-spacing:0.08em;"
             "background:linear-gradient("
             "135deg,#93c5fd 0%,#e0f2fe 50%,#5eead4 100%);"
             "-webkit-background-clip:text;"

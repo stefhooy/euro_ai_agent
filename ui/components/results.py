@@ -89,6 +89,6 @@ def render_results(itinerary: str, budget_result: dict, trip_plan: dict, prefere
         pricing_cal = trip_plan.get("pricing_calendar", {}) if trip_plan else {}
         render_pricing_calendar(pricing_cal)
 
-        st.subheader("🧠 How the agent planned this trip")
-        with st.expander("See the agent's reasoning", expanded=False):
+        st.subheader("🧠 How Hermes planned this trip")
+        with st.expander("See Hermes's reasoning", expanded=False):
             render_agent_thinking(trip_plan, budget_result, preferences)

@@ -9,13 +9,13 @@ logger = logging.getLogger(__name__)
 LLM = ChatOllama(model="llama3.1:8b", temperature=0.4)
 
 FALLBACK_ACTIVITIES = {
-    "museums":   [("City Museum Visit", 12), ("Art Gallery", 8)],
-    "food":      [("Local Food Market Tour", 0), ("Traditional Restaurant Dinner", 30)],
-    "history":   [("Old Town Walking Tour", 15), ("Historic Cathedral", 5)],
-    "nightlife": [("Evening Bar Crawl", 20), ("Rooftop Bar", 15)],
-    "nature":    [("City Park Walk", 0), ("Botanical Garden", 8)],
-    "shopping":  [("Local Market Browse", 0), ("High Street Shopping", 0)],
-    "adventure": [("Bike Tour", 25), ("Day Hike", 10)],
+    "museums":   [("City Museum Visit", 12), ("Art Gallery", 8), ("National History Museum", 10)],
+    "food":      [("Local Food Market Tour", 0), ("Traditional Restaurant Dinner", 30), ("Cooking Class", 45)],
+    "history":   [("Old Town Walking Tour", 15), ("Historic Cathedral", 5), ("Archaeological Site", 12)],
+    "nightlife": [("Evening Bar Crawl", 20), ("Rooftop Bar", 15), ("Live Music Venue", 10)],
+    "nature":    [("City Park Walk", 0), ("Botanical Garden", 8), ("Riverside Stroll", 0)],
+    "shopping":  [("Local Market Browse", 0), ("High Street Shopping", 0), ("Artisan Quarter", 0)],
+    "adventure": [("Bike Tour", 25), ("Day Hike", 10), ("Kayaking Trip", 35)],
 }
 
 
