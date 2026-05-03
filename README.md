@@ -8,21 +8,32 @@
 
 ---
 
+## Why Hermes?
+
+The name comes from Greek mythology. Hermes was the god of roads, travel, trade, and commerce, the divine messenger who crossed borders freely, guided travellers on their journeys, and facilitated exchange between people and places. No figure in the ancient world was more closely tied to the act of moving through the world.
+
+I grew up reading Greek, Roman, and Egyptian mythology and have always found the character of Hermes fascinating. He is not the strongest or the most powerful of the gods, but he is the most useful. The one who gets things done, connects distant points, and makes journeys possible. That felt like exactly the right spirit for a travel planning agent.
+
+The name also works on a practical level. Hermes sits at the intersection of the three things this agent does: plan routes (roads), estimate costs (commerce), and help you see the world (travel). It is a name worth being proud of.
+
+---
+
 ## Table of Contents
 
-1. [How This Project Started](#how-this-project-started)
-2. [How the Agent Evolved](#how-the-agent-evolved)
-3. [How the Website Evolved](#how-the-website-evolved)
-4. [What Hermes Looks Like](#what-hermes-looks-like)
-5. [Prerequisites](#prerequisites)
-6. [Installation](#installation)
-7. [Running the App](#running-the-app)
-8. [How Hermes Plans Your Trip](#how-hermes-plans-your-trip)
-9. [What You Can Customise](#what-you-can-customise)
-10. [Project Structure](#project-structure)
-11. [Running the Tests](#running-the-tests)
-12. [Limitations](#limitations)
-13. [Data Sources](#data-sources)
+1. [Why Hermes?](#why-hermes)
+2. [How This Project Started](#how-this-project-started)
+3. [How the Agent Evolved](#how-the-agent-evolved)
+4. [How the Website Evolved](#how-the-website-evolved)
+5. [What Hermes Looks Like](#what-hermes-looks-like)
+6. [Prerequisites](#prerequisites)
+7. [Installation](#installation)
+8. [Running the App](#running-the-app)
+9. [How Hermes Plans Your Trip](#how-hermes-plans-your-trip)
+10. [What You Can Customise](#what-you-can-customise)
+11. [Project Structure](#project-structure)
+12. [Running the Tests](#running-the-tests)
+13. [Limitations](#limitations)
+14. [Data Sources](#data-sources)
 
 ---
 
