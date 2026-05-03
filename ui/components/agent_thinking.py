@@ -38,9 +38,25 @@ def _human_list(items) -> str:
     return ", ".join(items[:-1]) + f", and {items[-1]}"
 
 
+def _choice_phrase(index: int, total: int) -> str:
+    if total <= 1:
+        return "I started with"
+    if index == 0:
+        return "First, I chose"
+    if index == total - 1:
+        return "Lastly, I added"
+    if index == 1:
+        return "Second, I picked"
+    if index == 2:
+        return "Third, I brought in"
+    return f"Then, for stop {index + 1}, I added"
+
+
 def _city_reasoning(
     city: str,
     country: str,
+    index: int,
+    total: int,
     nights: int,
     score: float,
     matched: list,
@@ -56,6 +72,7 @@ def _city_reasoning(
 ) -> str:
     night_label = "night" if nights == 1 else "nights"
     place = f"{city}, {country}" if country else city
+    choice_phrase = _choice_phrase(index, total)
     interest_text = (
         f"it lines up with your interest in {_human_list(matched)}"
         if matched else "it broadens the route beyond your exact tags"
@@ -85,13 +102,12 @@ def _city_reasoning(
         route_text = "this stop fits the overall route shape"
 
     paragraph = (
-        f"I chose {place} because it gives this trip a strong balance "
-        f"of preference fit, budget control, and timing. From {dep}, "
-        f"{route_text}. "
-        f"I gave it {nights} {night_label} because your {pace} pace "
-        f"needs enough time to enjoy the city without making the route "
-        f"feel rushed. It scored {score}/100: {interest_text}, and "
-        f"{budget_text}.{weather_text}"
+        f"{choice_phrase} {place}. My logic here was to give the route "
+        f"a strong balance of preference fit, budget control, and timing. "
+        f"From {dep}, {route_text}. I gave it {nights} {night_label} "
+        f"because your {pace} pace needs enough time to enjoy the city "
+        f"without making the route feel rushed. It scored {score}/100: "
+        f"{interest_text}, and {budget_text}.{weather_text}"
     )
 
     bullets = [
@@ -99,6 +115,7 @@ def _city_reasoning(
         if matched else "- Interest fit: useful variety for the route.",
         f"- Budget logic: {budget_text}.",
         f"- Time allocation: {nights} {night_label} at a {pace} pace.",
+        f"- Route role: {route_text}.",
     ]
     bullets.extend(f"- {reason}" for reason in reasons)
     return paragraph + "\n\n" + "\n".join(bullets)
@@ -178,7 +195,8 @@ def render_agent_thinking(
         "Hermes explains how each stop fits your route."
     )
 
-    for city in destinations:
+    total_destinations = len(destinations)
+    for idx, city in enumerate(destinations):
         score_data = dest_scores.get(city, {})
         score = score_data.get("score", 0)
         reasons = score_data.get("reasons", [])
@@ -208,6 +226,8 @@ def render_agent_thinking(
                     _city_reasoning(
                         city=city,
                         country=country,
+                        index=idx,
+                        total=total_destinations,
                         nights=nights,
                         score=score,
                         matched=matched,

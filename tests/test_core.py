@@ -20,6 +20,39 @@ _CITIES = [
     {"name": "Lisbon",    "country": "Portugal"},
 ]
 
+_REGION_CITIES = [
+    {
+        "name": "Barcelona",
+        "country": "Spain",
+        "region": "southern_europe",
+    },
+    {
+        "name": "Rome",
+        "country": "Italy",
+        "region": "southern_europe",
+    },
+    {
+        "name": "Lisbon",
+        "country": "Portugal",
+        "region": "southern_europe",
+    },
+    {
+        "name": "Paris",
+        "country": "France",
+        "region": "western_europe",
+    },
+    {
+        "name": "Berlin",
+        "country": "Germany",
+        "region": "central_europe",
+    },
+    {
+        "name": "Prague",
+        "country": "Czech Republic",
+        "region": "eastern_europe",
+    },
+]
+
 
 def _prefs(duration=10, pace="moderate", num_countries=3):
     return {
@@ -64,6 +97,17 @@ def test_country_diversity_respected():
         c["country"] for c in _CITIES if c["name"] in cities
     }
     assert len(countries) >= 4
+
+
+def test_regional_diversity_preferred_when_available():
+    cities, nights = _fallback_city_distribution(
+        _REGION_CITIES, _prefs(duration=12, pace="moderate", num_countries=4)
+    )
+    regions = {
+        c["region"] for c in _REGION_CITIES if c["name"] in cities
+    }
+    assert len(regions) == 4
+    assert cities == ["Barcelona", "Paris", "Berlin", "Prague"]
 
 
 def test_num_countries_one_gives_single_country():

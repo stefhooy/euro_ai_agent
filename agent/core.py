@@ -116,7 +116,7 @@ def _fallback_city_distribution(
     top_cities: List[Dict[str, Any]],
     preferences: Dict[str, Any],
 ) -> Tuple[List[str], Dict[str, int]]:
-    """Pure Python fallback - always respects the country-count constraint."""
+    """Pure Python fallback for country and regional diversity."""
     duration = preferences["duration"]
     pace = preferences.get("pace", "moderate")
     num_countries = preferences.get("num_countries", 4)
@@ -133,25 +133,53 @@ def _fallback_city_distribution(
 
     if num_countries < 99:
         # Phase 1: pick exactly one city per unique country up to
-        # num_countries.
-        selected, countries_seen = [], set()
-        for city in top_cities:
-            if len(countries_seen) >= num_countries:
-                break
-            country = city.get("country", "?")
-            if country not in countries_seen:
+        # num_countries, preferring new European regions first. This keeps
+        # the requested country count while avoiding overly clustered routes.
+        selected, countries_seen, regions_seen = [], set(), set()
+        for prefer_new_region in (True, False):
+            for city in top_cities:
+                if len(countries_seen) >= num_countries:
+                    break
+                country = city.get("country", "?")
+                region = city.get("region", "")
+                if country in countries_seen:
+                    continue
+                if (
+                    prefer_new_region
+                    and region
+                    and region in regions_seen
+                ):
+                    continue
                 selected.append(city["name"])
                 countries_seen.add(country)
+                if region:
+                    regions_seen.add(region)
+            if len(countries_seen) >= num_countries:
+                break
+
         # Phase 2: fill remaining slots with more cities from those same
-        # countries.
-        for city in top_cities:
+        # countries. Prefer a new region if the chosen country set allows it.
+        for prefer_new_region in (True, False):
+            for city in top_cities:
+                if len(selected) >= target:
+                    break
+                region = city.get("region", "")
+                if (
+                    city["name"] in selected
+                    or city.get("country") not in countries_seen
+                ):
+                    continue
+                if (
+                    prefer_new_region
+                    and region
+                    and region in regions_seen
+                ):
+                    continue
+                selected.append(city["name"])
+                if region:
+                    regions_seen.add(region)
             if len(selected) >= target:
                 break
-            if (
-                city["name"] not in selected
-                and city.get("country") in countries_seen
-            ):
-                selected.append(city["name"])
     else:
         selected = [c["name"] for c in top_cities[:target]]
 
