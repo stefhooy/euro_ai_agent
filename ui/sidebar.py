@@ -1,7 +1,10 @@
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Callable, Tuple
 
 import streamlit as st
+
+_LOGO = Path(__file__).parent / "assets" / "web_euro.png"
 
 from ui.config import (
     ACTIVITY_MAP,
@@ -19,10 +22,12 @@ from ui.config import (
 def render_sidebar(reset_callback: Callable) -> Tuple[bool, dict]:
     """Render sidebar; return (plan_button_clicked, preferences)."""
     with st.sidebar:
+        if _LOGO.exists():
+            st.image(str(_LOGO), width=52)
         st.markdown(
             "<h2 style='font-family:Playfair Display,serif;"
-            "color:#5eead4;margin-bottom:0;'>"
-            "🪽 Hermes</h2>",
+            "color:#5eead4;margin:4px 0 0;'>"
+            "Hermes</h2>",
             unsafe_allow_html=True,
         )
         st.caption("AI-powered European travel planner")
@@ -54,14 +59,14 @@ def render_sidebar(reset_callback: Callable) -> Tuple[bool, dict]:
         )
         if budget_input < _min * 0.55:
             st.error(
-                f"⛔ Budget too low — a {duration_input}-day "
+                f"⛔ Budget too low, a {duration_input}-day "
                 f"**{style_input.lower()}** trip typically costs "
                 f"at least **€{_min:,.0f}**. Increase your budget "
                 "or switch to a cheaper travel style."
             )
         elif budget_input < _min * 0.80:
             st.warning(
-                f"⚠️ Tight budget — a {duration_input}-day "
+                f"⚠️ Tight budget, a {duration_input}-day "
                 f"**{style_input.lower()}** trip usually needs "
                 f"around **€{_min:,.0f}**. Hermes will try to "
                 "replan, but options will be limited."
@@ -91,7 +96,7 @@ def render_sidebar(reset_callback: Callable) -> Tuple[bool, dict]:
             st.warning(
                 f"⚠️ {num_countries_display} countries in "
                 f"{duration_input} days is less than 3 days per "
-                f"country — very rushed. Capping at "
+                f"country, very rushed. Capping at "
                 f"**{max_realistic}** for a realistic trip."
             )
             num_countries_final = max_realistic

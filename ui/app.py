@@ -3,6 +3,7 @@ import sys
 import traceback
 from pathlib import Path
 
+from PIL import Image
 import streamlit as st
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -18,9 +19,11 @@ importlib.reload(_agent_planner)
 from agent.core import run_agent
 
 # Page config must be the first Streamlit call.
+_icon_path = Path(__file__).parent / "assets" / "web_euro.png"
+_page_icon = Image.open(_icon_path) if _icon_path.exists() else "🪽"
 st.set_page_config(
-    page_title="Hermes — AI Travel Planner",
-    page_icon="🪽",
+    page_title="Hermes - Euro AI Travel Planner",
+    page_icon=_page_icon,
     layout="wide",
     initial_sidebar_state="expanded",
 )

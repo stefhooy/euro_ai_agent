@@ -68,7 +68,7 @@ def render_hero() -> None:
             "<span style='color:#cbd5e1;font-size:0.9rem;"
             "line-height:1.6;'>"
             "In Greek mythology, Hermes was the god of <strong>"
-            "roads, travel, and commerce</strong> — the divine "
+            "roads, travel, and commerce</strong> , the divine "
             "messenger who crossed borders freely and guided "
             "travellers on their journeys. The perfect name for "
             "an agent that plans routes, compares costs, and "
@@ -82,7 +82,7 @@ def render_hero() -> None:
             "line-height:1.75;margin:0;'>"
             "Set your preferences in the sidebar and Hermes "
             "will build a complete multi-city European itinerary "
-            "— selecting destinations, estimating transport and "
+            ", selecting destinations, estimating transport and "
             "accommodation costs, and showing you the best time "
             "of year to travel."
             "</p>",
@@ -111,7 +111,7 @@ def render_hero() -> None:
          "best matches."),
         ("✈️", "Plans every leg of the journey",
          "Compares flights, trains, and buses for each route "
-         "segment — applying real geographic constraints like "
+         "segment, applying real geographic constraints like "
          "water crossings and mountain ranges."),
         ("🏨", "Estimates accommodation",
          "Calculates realistic hotel costs by city, travel "
@@ -149,7 +149,7 @@ def render_hero() -> None:
     st.markdown(
         "<p style='text-align:center;color:#64748b;"
         "font-size:0.82rem;margin-top:8px;'>"
-        "Hermes supports 1-6 countries per trip — a minimum of "
+        "Hermes supports 1-6 countries per trip: a minimum of "
         "3 days per country is enforced so every stop is "
         "worth the journey."
         "</p>",
