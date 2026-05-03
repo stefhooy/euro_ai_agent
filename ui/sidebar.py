@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Callable, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 import streamlit as st
 
@@ -19,7 +19,9 @@ from ui.config import (
 )
 
 
-def render_sidebar(reset_callback: Callable) -> Tuple[bool, dict]:
+def render_sidebar(
+    reset_callback: Callable,
+) -> Tuple[bool, Dict[str, Any]]:
     """Render sidebar; return (plan_button_clicked, preferences)."""
     with st.sidebar:
         if _LOGO.exists():

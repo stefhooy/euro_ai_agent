@@ -1,7 +1,3 @@
-import pytest
-import importlib
-
-
 def test_main_module_imports():
     """Smoke test: main.py imports without errors."""
     import main

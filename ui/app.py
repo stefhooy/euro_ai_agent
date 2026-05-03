@@ -20,7 +20,7 @@ from agent.core import run_agent
 
 # Page config must be the first Streamlit call.
 _icon_path = Path(__file__).parent / "assets" / "web_euro.png"
-_page_icon = Image.open(_icon_path) if _icon_path.exists() else "🪽"
+_page_icon = Image.open(_icon_path) if _icon_path.exists() else "\U0001fa75"
 st.set_page_config(
     page_title="Hermes - Euro AI Travel Planner",
     page_icon=_page_icon,
@@ -36,21 +36,26 @@ from ui.components.results import render_results
 
 inject_css()
 
-# ── Session state ─────────────────────────────────────────────────────────────
+# Session state
 for key, default in SESSION_DEFAULTS:
     if key not in st.session_state:
         st.session_state[key] = default
 
 
 def _reset_app() -> None:
-    for key in ("itinerary", "budget_result", "preferences", "trip_plan"):
+    for key in (
+        "itinerary", "budget_result", "preferences", "trip_plan"
+    ):
         st.session_state[key] = None
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# Sidebar
 plan_button, preferences = render_sidebar(reset_callback=_reset_app)
 
-# ── Plan button handler ───────────────────────────────────────────────────────
+# How many progress callbacks run_agent fires (one per _cb() call)
+_TOTAL_STEPS = 8
+
+# Plan button handler
 if plan_button:
     if not preferences["_activities_input"]:
         st.warning("Please select at least one activity preference.")
@@ -58,28 +63,66 @@ if plan_button:
         st.warning("Please select at least one transport option.")
     else:
         # Remove UI-only sentinel keys before passing to the agent.
-        agent_prefs = {k: v for k, v in preferences.items() if not k.startswith("_")}
+        agent_prefs = {
+            k: v for k, v in preferences.items()
+            if not k.startswith("_")
+        }
 
-        progress_box = st.empty()
-
-        def _update_progress(msg: str) -> None:
-            progress_box.info(msg)
-
-        try:
-            itinerary, budget_result, trip_plan = run_agent(
-                agent_prefs, progress_callback=_update_progress
+        with st.status(
+            "\U0001fa75  Hermes is thinking and planning your trip...",
+            expanded=True,
+        ) as _status:
+            st.markdown(
+                "**Please remain patient** - Hermes is consulting "
+                "a local AI model and fetching live data. "
+                "This typically takes **30-60 seconds**."
             )
-            progress_box.empty()
-            st.session_state.itinerary = itinerary
-            st.session_state.budget_result = budget_result
-            st.session_state.preferences = agent_prefs
-            st.session_state.trip_plan = trip_plan
-        except Exception as e:
-            progress_box.empty()
-            st.error(f"An error occurred while planning the trip: {e}")
-            st.code(traceback.format_exc(), language="python")
+            _bar = st.progress(0.0)
+            _msg = st.empty()
+            _step = [0]
 
-# ── Main content ──────────────────────────────────────────────────────────────
+            def _update_progress(msg: str) -> None:
+                _step[0] += 1
+                pct = min(_step[0] / _TOTAL_STEPS, 1.0)
+                _bar.progress(
+                    pct,
+                    text=(
+                        f"Step {_step[0]} of {_TOTAL_STEPS}"
+                    ),
+                )
+                _msg.info(f"\U0001fa75  {msg}")
+
+            try:
+                itinerary, budget_result, trip_plan = run_agent(
+                    agent_prefs,
+                    progress_callback=_update_progress,
+                )
+                _bar.progress(1.0, text="Done!")
+                _status.update(
+                    label=(
+                        "✅  Trip planned! "
+                        "Scroll down to see your itinerary."
+                    ),
+                    state="complete",
+                    expanded=False,
+                )
+                st.session_state.itinerary = itinerary
+                st.session_state.budget_result = budget_result
+                st.session_state.preferences = agent_prefs
+                st.session_state.trip_plan = trip_plan
+            except Exception as e:
+                _status.update(
+                    label="❌  Planning failed - see error below.",
+                    state="error",
+                    expanded=True,
+                )
+                st.error(
+                    "An error occurred while planning the trip: "
+                    f"{e}"
+                )
+                st.code(traceback.format_exc(), language="python")
+
+# Main content
 if st.session_state.itinerary and st.session_state.budget_result:
     render_results(
         itinerary=st.session_state.itinerary,
@@ -90,11 +133,12 @@ if st.session_state.itinerary and st.session_state.budget_result:
 else:
     render_hero()
 
-# ── Footer ────────────────────────────────────────────────────────────────────
+# Footer
 st.markdown("---")
 st.markdown(
     "<p style='text-align:center;color:#475569;font-size:0.8rem;'>"
-    "Built with Python · Streamlit · Ollama (llama3.1:8b) · Wikipedia · Open-Meteo"
+    "Built with Python · Streamlit · "
+    "Ollama (llama3.1:8b) · Wikipedia · Open-Meteo"
     "</p>",
     unsafe_allow_html=True,
 )

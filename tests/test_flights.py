@@ -1,4 +1,3 @@
-import pytest
 from tools.flights import estimate_flights, _get_departure_region
 from tools.seasonality import MONTHLY_MULTIPLIERS
 
@@ -21,14 +20,20 @@ def test_departure_region_unknown_defaults_to_western():
 
 
 def test_estimate_flights_returns_correct_structure():
-    result = estimate_flights("Sofia", ["Barcelona", "Paris"], travel_month=6)
+    result = estimate_flights(
+        "Sofia", ["Barcelona", "Paris"], travel_month=6
+    )
     assert "flight_legs" in result
     assert "total_flights_cost" in result
 
 
 def test_estimate_flights_leg_count():
     """3 destinations = outbound + 2 inter-city + inbound = 4 legs."""
-    result = estimate_flights("Sofia", ["Barcelona", "Paris", "Rome"], travel_month=6)
+    result = estimate_flights(
+        "Sofia",
+        ["Barcelona", "Paris", "Rome"],
+        travel_month=6,
+    )
     assert len(result["flight_legs"]) == 4
 
 
@@ -44,7 +49,12 @@ def test_estimate_flights_peak_more_expensive_than_offpeak():
 
 
 def test_estimate_flights_accepts_return_city():
-    result = estimate_flights("Sofia", ["Barcelona"], travel_month=6, return_city="London")
+    result = estimate_flights(
+        "Sofia",
+        ["Barcelona"],
+        travel_month=6,
+        return_city="London",
+    )
     assert result["flight_legs"][-1]["to"] == "London"
 
 

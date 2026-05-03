@@ -1,8 +1,9 @@
 import calendar as _cal
+from typing import Any, Dict
 
 import streamlit as st
 
-# ── Card HTML helpers ─────────────────────────────────────────────────────────
+# Card HTML helpers
 
 
 def _metric_card(label: str, value: str) -> str:
@@ -23,19 +24,19 @@ def _metric_card(label: str, value: str) -> str:
 def _grid(*cards: str, cols: int = 4) -> str:
     inner = "".join(cards)
     return (
-        f"<div style='display:grid;"
+        "<div style='display:grid;"
         f"grid-template-columns:repeat({cols},1fr);"
         f"gap:12px;margin-bottom:16px;'>{inner}</div>"
     )
 
 
-# ── Main render ───────────────────────────────────────────────────────────────
+# Main render
 
 
 def render_agent_thinking(
-    trip_plan: dict,
-    budget_result: dict,
-    preferences: dict,
+    trip_plan: Dict[str, Any],
+    budget_result: Dict[str, Any],
+    preferences: Dict[str, Any],
 ) -> None:
     """Structured breakdown of every decision the agent made."""
     destinations = trip_plan.get("destinations", [])
@@ -66,23 +67,23 @@ def render_agent_thinking(
     duration = preferences.get("duration", 0)
     month_name = _cal.month_name[travel_month]
 
-    # ── 1. Planning decisions ─────────────────────────────────────────────────
-    st.markdown("#### 📋 Planning decisions")
+    # 1. Planning decisions
+    st.markdown("#### \U0001f4cb Planning decisions")
     st.markdown(
         _grid(
-            _metric_card("🛫 From", dep),
-            _metric_card("🛬 Return", ret),
-            _metric_card("📅 Duration", f"{duration} days"),
-            _metric_card("🗓️ Month", month_name),
+            _metric_card("\U0001f6eb From", dep),
+            _metric_card("\U0001f6ec Return", ret),
+            _metric_card("\U0001f4c5 Duration", f"{duration} days"),
+            _metric_card("\U0001f5d3️ Month", month_name),
         ),
         unsafe_allow_html=True,
     )
     st.markdown(
         _grid(
             _metric_card("✨ Style", style),
-            _metric_card("🚶 Pace", pace.title()),
-            _metric_card("🌍 Countries", str(num_countries)),
-            _metric_card("🏙️ Cities", str(len(destinations))),
+            _metric_card("\U0001f6b6 Pace", pace.title()),
+            _metric_card("\U0001f30d Countries", str(num_countries)),
+            _metric_card("\U0001f3d9️ Cities", str(len(destinations))),
         ),
         unsafe_allow_html=True,
     )
@@ -93,9 +94,9 @@ def render_agent_thinking(
         f"Directness: **{directness}**"
     )
 
-    # ── 2. Why these cities? ──────────────────────────────────────────────────
+    # 2. Why these cities?
     st.markdown("---")
-    st.markdown("#### 🏙️ Why these cities?")
+    st.markdown("#### \U0001f3d9️ Why these cities?")
     st.caption(
         "Scored 0-100: activity match (40 pts), "
         "budget fit (40 pts), season (20 pts). "
@@ -144,7 +145,7 @@ def render_agent_thinking(
                     st.markdown(
                         "<span style='font-size:0.85rem;"
                         f"color:#7dd3fc;'>{weather['emoji']} "
-                        f"**{cond}** in {month_name} — "
+                        f"**{cond}** in {month_name} - "
                         f"{lo}°C to {hi}°C</span>",
                         unsafe_allow_html=True,
                     )
@@ -159,7 +160,8 @@ def render_agent_thinking(
 
                 if matched:
                     st.caption(
-                        f"✅ Interests matched: {', '.join(matched)}"
+                        f"✅ Interests matched: "
+                        f"{', '.join(matched)}"
                     )
                 elif city_tags:
                     st.caption(
@@ -173,7 +175,7 @@ def render_agent_thinking(
                     st.metric("Hotel / night", f"€{nightly:,.0f}")
                     st.caption(accom.get("recommended_area", ""))
 
-    # ── 3. Transport decisions ────────────────────────────────────────────────
+    # 3. Transport decisions
     if flight_legs:
         st.markdown("---")
         st.markdown("#### ✈️ Transport decisions")
@@ -192,9 +194,12 @@ def render_agent_thinking(
             dist_label = f" · {dist:,} km" if dist else ""
             dur = leg.get("duration_hours")
             dur_label = (
-                f" · {dur:g}h" if isinstance(dur, (int, float)) else ""
+                f" · {dur:g}h"
+                if isinstance(dur, (int, float)) else ""
             )
-            leg_type = leg.get("type", "").replace("_", " ").title()
+            leg_type = (
+                leg.get("type", "").replace("_", " ").title()
+            )
             alts = leg.get("alternatives", [])
 
             with st.container():
@@ -204,10 +209,13 @@ def render_agent_thinking(
                         f"**{leg['from']} → {leg['to']}** "
                         "<span style='color:#94a3b8;"
                         f"font-size:0.85rem;'>"
-                        f"{leg_type}{dist_label}{dur_label}</span>",
+                        f"{leg_type}{dist_label}"
+                        f"{dur_label}</span>",
                         unsafe_allow_html=True,
                     )
-                    st.markdown(f"Chosen: **{mode}** ({direct_label})")
+                    st.markdown(
+                        f"Chosen: **{mode}** ({direct_label})"
+                    )
                     if alts:
                         alt_parts = [
                             f"{a['mode'].title()} "
@@ -216,27 +224,42 @@ def render_agent_thinking(
                             for a in alts
                         ]
                         st.caption(
-                            "Alternatives: " + " · ".join(alt_parts)
+                            "Alternatives: "
+                            + " · ".join(alt_parts)
                         )
                 with lc2:
                     cost = leg.get("cost_eur", 0)
                     st.metric("Cost", f"€{cost:,.0f}")
 
-    # ── 4. Budget allocation ──────────────────────────────────────────────────
+    # 4. Budget allocation
     st.markdown("---")
-    st.markdown("#### 💶 Budget allocation")
+    st.markdown("#### \U0001f4b6 Budget allocation")
 
     grand = budget_result.get("grand_total", 1) or 1
     user_budget = budget_result.get("user_budget", 0)
     categories = [
-        ("✈️ Transport",     budget_result.get("flights_cost", 0)),
-        ("🏨 Accommodation", budget_result.get("accommodation_cost", 0)),
-        ("🎭 Activities",    budget_result.get("activities_cost", 0)),
-        ("🍽️ Food",          budget_result.get("food_cost", 0)),
+        (
+            "✈️ Transport",
+            budget_result.get("flights_cost", 0),
+        ),
+        (
+            "\U0001f3e8 Accommodation",
+            budget_result.get("accommodation_cost", 0),
+        ),
+        (
+            "\U0001f3ad Activities",
+            budget_result.get("activities_cost", 0),
+        ),
+        (
+            "\U0001f37d️ Food",
+            budget_result.get("food_cost", 0),
+        ),
     ]
     for label, cost in categories:
         pct = cost / grand * 100
-        pct_budget = cost / user_budget * 100 if user_budget else 0
+        pct_budget = (
+            cost / user_budget * 100 if user_budget else 0
+        )
         st.markdown(
             f"**{label}** - €{cost:,.0f} "
             "<span style='color:#94a3b8;font-size:0.85rem;'>"

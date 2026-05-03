@@ -26,4 +26,7 @@ def test_pricing_calendar_uses_trip_nights_and_fixed_costs():
         fixed_costs=300,
     )
 
-    assert custom["monthly_costs"][0]["estimated_cost"] > base["monthly_costs"][0]["estimated_cost"]
+    assert (
+        custom["monthly_costs"][0]["estimated_cost"]
+        > base["monthly_costs"][0]["estimated_cost"]
+    )

@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -9,10 +11,15 @@ _CHART_LAYOUT = dict(
 )
 
 
-def render_cost_pie(budget_result: dict) -> None:
+def render_cost_pie(budget_result: Dict[str, Any]) -> None:
     st.subheader("Cost Breakdown")
     costs_data = {
-        "Category": ["Transport", "Accommodation", "Activities", "Food"],
+        "Category": [
+            "Transport",
+            "Accommodation",
+            "Activities",
+            "Food",
+        ],
         "Amount (€)": [
             budget_result.get("flights_cost", 0),
             budget_result.get("accommodation_cost", 0),
@@ -24,27 +31,40 @@ def render_cost_pie(budget_result: dict) -> None:
         costs_data,
         values="Amount (€)",
         names="Category",
-        color_discrete_sequence=["#3b82f6", "#06b6d4", "#8b5cf6", "#f59e0b"],
+        color_discrete_sequence=[
+            "#3b82f6",
+            "#06b6d4",
+            "#8b5cf6",
+            "#f59e0b",
+        ],
     )
     fig.update_traces(textposition="inside", textinfo="percent+label")
     fig.update_layout(showlegend=False, **_CHART_LAYOUT)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_pricing_calendar(pricing_cal: dict) -> None:
+def render_pricing_calendar(pricing_cal: Dict[str, Any]) -> None:
     monthly_costs = pricing_cal.get("monthly_costs", [])
     if not monthly_costs:
         return
 
-    st.subheader("📅 Pricing Calendar")
-    cheapest = pricing_cal.get("cheapest_month", {}).get("month_name", "")
-    most_exp = pricing_cal.get("most_expensive_month", {}).get("month_name", "")
+    st.subheader("\U0001f4c5 Pricing Calendar")
+    cheapest = (
+        pricing_cal.get("cheapest_month", {}).get("month_name", "")
+    )
+    most_exp = (
+        pricing_cal
+        .get("most_expensive_month", {})
+        .get("month_name", "")
+    )
     best_wx = pricing_cal.get("best_weather_months", [])
 
     df = pd.DataFrame(monthly_costs)
     df["highlight"] = df["month_name"].apply(
         lambda m: "Cheapest ✅" if m == cheapest
-        else ("Most Expensive ❌" if m == most_exp else "Normal")
+        else (
+            "Most Expensive ❌" if m == most_exp else "Normal"
+        )
     )
     fig = px.bar(
         df,
@@ -56,7 +76,10 @@ def render_pricing_calendar(pricing_cal: dict) -> None:
             "Most Expensive ❌": "#ff1100",
             "Normal": "#3b82f6",
         },
-        labels={"estimated_cost": "Est. Cost (€)", "month_name": ""},
+        labels={
+            "estimated_cost": "Est. Cost (€)",
+            "month_name": "",
+        },
     )
     fig.update_layout(
         showlegend=True,
@@ -69,10 +92,26 @@ def render_pricing_calendar(pricing_cal: dict) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
     if best_wx:
-        st.caption(f"🌤️ Best weather: {', '.join(best_wx)}")
+        st.caption(
+            f"\U0001f324️ Best weather: {', '.join(best_wx)}"
+        )
     if cheapest:
-        cheap_cost = pricing_cal.get("cheapest_month", {}).get("estimated_cost", 0)
-        st.caption(f"✅ Cheapest month: **{cheapest}** (~€{cheap_cost:,.0f})")
+        cheap_cost = (
+            pricing_cal
+            .get("cheapest_month", {})
+            .get("estimated_cost", 0)
+        )
+        st.caption(
+            f"✅ Cheapest month: **{cheapest}**"
+            f" (~€{cheap_cost:,.0f})"
+        )
     if most_exp:
-        exp_cost = pricing_cal.get("most_expensive_month", {}).get("estimated_cost", 0)
-        st.caption(f"❌ Most expensive: **{most_exp}** (~€{exp_cost:,.0f})")
+        exp_cost = (
+            pricing_cal
+            .get("most_expensive_month", {})
+            .get("estimated_cost", 0)
+        )
+        st.caption(
+            f"❌ Most expensive: **{most_exp}**"
+            f" (~€{exp_cost:,.0f})"
+        )

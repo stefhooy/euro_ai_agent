@@ -1,11 +1,9 @@
 """Tests for the pure-Python logic in agent/core.py.
 
-The LLM and external API calls are not tested here — only the
+The LLM and external API calls are not tested here - only the
 deterministic helper functions that can run without network access.
 """
 from datetime import date
-
-import pytest
 
 from agent.core import _fallback_city_distribution, _get_travel_year
 

@@ -23,7 +23,9 @@ def test_get_weather_summary_uses_requested_year(monkeypatch):
         return _FakeResponse()
 
     monkeypatch.setattr(web_search.requests, "get", fake_get)
-    result = web_search.get_weather_summary("Paris", 48.8566, 2.3522, month=8, year=2025)
+    result = web_search.get_weather_summary(
+        "Paris", 48.8566, 2.3522, month=8, year=2025
+    )
 
     assert captured["params"]["start_date"] == "2025-08-01"
     assert captured["params"]["end_date"] == "2025-08-28"

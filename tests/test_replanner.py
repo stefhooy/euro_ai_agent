@@ -1,9 +1,8 @@
-import pytest
 from tools.replanner import replan
 
 
 def _make_over_budget_plan():
-    """Helper that returns a minimal over-budget trip plan and budget result."""
+    """Helper: returns a minimal over-budget trip plan and budget result."""
     trip_plan = {
         "destinations": ["Paris", "Barcelona"],
         "nights_per_city": {"Paris": 5, "Barcelona": 3},
@@ -11,15 +10,47 @@ def _make_over_budget_plan():
         "flights": {"flight_legs": [], "total_flights_cost": 600},
         "accommodation": {
             "city_breakdown": {
-                "Paris": {"nightly_cost": 300, "total_cost": 1500, "recommended_area": "Le Marais", "nights": 5},
-                "Barcelona": {"nightly_cost": 200, "total_cost": 600, "recommended_area": "Eixample", "nights": 3},
+                "Paris": {
+                    "nightly_cost": 300,
+                    "total_cost": 1500,
+                    "recommended_area": "Le Marais",
+                    "nights": 5,
+                },
+                "Barcelona": {
+                    "nightly_cost": 200,
+                    "total_cost": 600,
+                    "recommended_area": "Eixample",
+                    "nights": 3,
+                },
             },
             "total_accommodation_cost": 2100,
         },
         "activities": {
             "city_activities": {
-                "Paris": {"activities": [{"name": "Louvre", "cost_eur": 20, "day": 1, "category": "museums", "description": ""}], "city_total_cost": 20},
-                "Barcelona": {"activities": [{"name": "Sagrada Familia", "cost_eur": 26, "day": 1, "category": "history", "description": ""}], "city_total_cost": 26},
+                "Paris": {
+                    "activities": [
+                        {
+                            "name": "Louvre",
+                            "cost_eur": 20,
+                            "day": 1,
+                            "category": "museums",
+                            "description": "",
+                        }
+                    ],
+                    "city_total_cost": 20,
+                },
+                "Barcelona": {
+                    "activities": [
+                        {
+                            "name": "Sagrada Familia",
+                            "cost_eur": 26,
+                            "day": 1,
+                            "category": "history",
+                            "description": "",
+                        }
+                    ],
+                    "city_total_cost": 26,
+                },
             },
             "total_activities_cost": 46,
         },
@@ -48,9 +79,17 @@ def test_replan_returns_correct_structure():
         "travel_month": 6,
     }
     all_scored_cities = [
-        {"name": "Prague", "avg_daily_cost": {"luxury": 150}, "activity_tags": ["history"], "best_months": [5, 6], "avg_flight_cost": {"from_eastern_europe": 80}}
+        {
+            "name": "Prague",
+            "avg_daily_cost": {"luxury": 150},
+            "activity_tags": ["history"],
+            "best_months": [5, 6],
+            "avg_flight_cost": {"from_eastern_europe": 80},
+        }
     ]
-    result = replan(trip_plan, budget_result, all_scored_cities, preferences)
+    result = replan(
+        trip_plan, budget_result, all_scored_cities, preferences
+    )
     assert "adjusted_trip_plan" in result
     assert "new_budget_result" in result
     assert "changes_made" in result

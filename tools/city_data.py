@@ -1,5 +1,7 @@
 import concurrent.futures
 import logging
+from typing import Any, Dict, List
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -8,7 +10,7 @@ NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 TIMEOUT = 8
 
 # Regional baseline daily costs in EUR (backpacker / mid_range / luxury)
-REGIONAL_COSTS = {
+REGIONAL_COSTS: Dict[str, Dict[str, int]] = {
     "western_europe":  {"backpacker": 75,  "mid_range": 160, "luxury": 400},
     "eastern_europe":  {"backpacker": 35,  "mid_range": 80,  "luxury": 220},
     "southern_europe": {"backpacker": 55,  "mid_range": 130, "luxury": 320},
@@ -17,16 +19,41 @@ REGIONAL_COSTS = {
 }
 
 # Regional baseline flight costs in EUR
-REGIONAL_FLIGHT_COSTS = {
-    "western_europe":  {"from_western_europe": 70,  "from_eastern_europe": 130, "from_north_america": 600, "from_uk": 65},
-    "eastern_europe":  {"from_western_europe": 130, "from_eastern_europe": 60,  "from_north_america": 700, "from_uk": 140},
-    "southern_europe": {"from_western_europe": 80,  "from_eastern_europe": 120, "from_north_america": 620, "from_uk": 75},
-    "northern_europe": {"from_western_europe": 90,  "from_eastern_europe": 150, "from_north_america": 580, "from_uk": 60},
-    "central_europe":  {"from_western_europe": 85,  "from_eastern_europe": 90,  "from_north_america": 640, "from_uk": 100},
+REGIONAL_FLIGHT_COSTS: Dict[str, Dict[str, int]] = {
+    "western_europe": {
+        "from_western_europe": 70,
+        "from_eastern_europe": 130,
+        "from_north_america": 600,
+        "from_uk": 65,
+    },
+    "eastern_europe": {
+        "from_western_europe": 130,
+        "from_eastern_europe": 60,
+        "from_north_america": 700,
+        "from_uk": 140,
+    },
+    "southern_europe": {
+        "from_western_europe": 80,
+        "from_eastern_europe": 120,
+        "from_north_america": 620,
+        "from_uk": 75,
+    },
+    "northern_europe": {
+        "from_western_europe": 90,
+        "from_eastern_europe": 150,
+        "from_north_america": 580,
+        "from_uk": 60,
+    },
+    "central_europe": {
+        "from_western_europe": 85,
+        "from_eastern_europe": 90,
+        "from_north_america": 640,
+        "from_uk": 100,
+    },
 }
 
 # Best travel months by region
-REGIONAL_BEST_MONTHS = {
+REGIONAL_BEST_MONTHS: Dict[str, List[int]] = {
     "western_europe":  [4, 5, 6, 7, 8, 9],
     "eastern_europe":  [5, 6, 7, 8, 9],
     "southern_europe": [4, 5, 6, 9, 10],
@@ -35,9 +62,9 @@ REGIONAL_BEST_MONTHS = {
 }
 
 
-def get_coordinates(city_name: str, country: str) -> dict:
-    """
-    Fetches latitude and longitude for a city using Nominatim (OpenStreetMap).
+def get_coordinates(city_name: str, country: str) -> Dict[str, float]:
+    """Fetch latitude and longitude for a city using Nominatim.
+
     Free, no API key required. Falls back to central Europe if unavailable.
 
     Args:
@@ -50,20 +77,25 @@ def get_coordinates(city_name: str, country: str) -> dict:
     try:
         params = {"q": f"{city_name}, {country}", "format": "json", "limit": 1}
         headers = {"User-Agent": "EuroTripAgent/1.0 (student project)"}
-        r = requests.get(NOMINATIM_URL, params=params, headers=headers, timeout=TIMEOUT)
+        r = requests.get(
+            NOMINATIM_URL, params=params, headers=headers, timeout=TIMEOUT
+        )
         r.raise_for_status()
         results = r.json()
         if results:
             logger.info(f"Nominatim: coordinates found for {city_name}.")
-            return {"lat": float(results[0]["lat"]), "lon": float(results[0]["lon"])}
+            return {
+                "lat": float(results[0]["lat"]),
+                "lon": float(results[0]["lon"]),
+            }
     except Exception as e:
         logger.warning(f"Nominatim failed for {city_name}: {e}")
     return {"lat": 48.2082, "lon": 16.3738}  # Vienna as fallback
 
 
-def build_city_profile(seed_city: dict) -> dict:
-    """
-    Builds a full scoring profile for a city from seed data.
+def build_city_profile(seed_city: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a full scoring profile for a city from seed data.
+
     Uses pre-computed coordinates from the seed JSON; only calls Nominatim
     as a last resort for any city missing lat/lon.
 
@@ -77,9 +109,11 @@ def build_city_profile(seed_city: dict) -> dict:
     country = seed_city["country"]
     region = seed_city.get("region", "western_europe")
 
-    # Use pre-computed coordinates from seed data; only call Nominatim as fallback
     if "lat" in seed_city and "lon" in seed_city:
-        geo = {"lat": seed_city["lat"], "lon": seed_city["lon"]}
+        geo: Dict[str, float] = {
+            "lat": seed_city["lat"],
+            "lon": seed_city["lon"],
+        }
     else:
         geo = get_coordinates(name, country)
 
@@ -99,9 +133,9 @@ def build_city_profile(seed_city: dict) -> dict:
     }
 
 
-def load_all_city_profiles(seed_path: str) -> list:
-    """
-    Loads all seed cities and builds live profiles for each in parallel.
+def load_all_city_profiles(seed_path: str) -> List[Dict[str, Any]]:
+    """Load all seed cities and build live profiles for each in parallel.
+
     Uses up to 8 threads to keep total fetch time under ~10 seconds.
 
     Args:
@@ -114,7 +148,9 @@ def load_all_city_profiles(seed_path: str) -> list:
     with open(seed_path, "r", encoding="utf-8") as f:
         seed_cities = json.load(f)
 
-    logger.info(f"Building live profiles for {len(seed_cities)} cities in parallel...")
+    logger.info(
+        f"Building live profiles for {len(seed_cities)} cities in parallel..."
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
         profiles = list(ex.map(build_city_profile, seed_cities))
 
