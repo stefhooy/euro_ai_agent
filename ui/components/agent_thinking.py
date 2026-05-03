@@ -30,6 +30,80 @@ def _grid(*cards: str, cols: int = 4) -> str:
     )
 
 
+def _human_list(items) -> str:
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    return ", ".join(items[:-1]) + f", and {items[-1]}"
+
+
+def _city_reasoning(
+    city: str,
+    country: str,
+    nights: int,
+    score: float,
+    matched: list,
+    reasons: list,
+    avg_daily: float,
+    style: str,
+    pace: str,
+    month_name: str,
+    weather: Dict[str, Any],
+    dep: str,
+    num_countries: int,
+    trip_type: str,
+) -> str:
+    night_label = "night" if nights == 1 else "nights"
+    place = f"{city}, {country}" if country else city
+    interest_text = (
+        f"it lines up with your interest in {_human_list(matched)}"
+        if matched else "it broadens the route beyond your exact tags"
+    )
+    budget_text = (
+        f"the estimated daily cost is EUR {avg_daily:,.0f} for your "
+        f"{style.lower()} style"
+        if avg_daily else "the cost profile fits the overall route"
+    )
+    weather_text = ""
+    if weather.get("avg_high_c") is not None:
+        weather_text = (
+            f" The {month_name} weather also looks usable: "
+            f"{weather['condition'].lower()}, around "
+            f"{weather['avg_low_c']}C to {weather['avg_high_c']}C."
+        )
+    if trip_type == "international":
+        route_text = (
+            "this stop helps keep the route international while adding "
+            f"a distinct country to the {num_countries}-country plan"
+        )
+    elif trip_type == "domestic":
+        route_text = (
+            "this stop keeps the route focused on your departure country"
+        )
+    else:
+        route_text = "this stop fits the overall route shape"
+
+    paragraph = (
+        f"I chose {place} because it gives this trip a strong balance "
+        f"of preference fit, budget control, and timing. From {dep}, "
+        f"{route_text}. "
+        f"I gave it {nights} {night_label} because your {pace} pace "
+        f"needs enough time to enjoy the city without making the route "
+        f"feel rushed. It scored {score}/100: {interest_text}, and "
+        f"{budget_text}.{weather_text}"
+    )
+
+    bullets = [
+        f"- Interest fit: {_human_list(matched)}."
+        if matched else "- Interest fit: useful variety for the route.",
+        f"- Budget logic: {budget_text}.",
+        f"- Time allocation: {nights} {night_label} at a {pace} pace.",
+    ]
+    bullets.extend(f"- {reason}" for reason in reasons)
+    return paragraph + "\n\n" + "\n".join(bullets)
+
+
 # Main render
 
 
@@ -64,6 +138,7 @@ def render_agent_thinking(
     route_priority = raw_priority.replace("_", " ")
     raw_direct = preferences.get("directness", "allow_connections")
     directness = raw_direct.replace("_", " ")
+    trip_type = preferences.get("trip_type", "international")
     duration = preferences.get("duration", 0)
     month_name = _cal.month_name[travel_month]
 
@@ -99,8 +174,8 @@ def render_agent_thinking(
     st.markdown("#### \U0001f3d9️ Why these cities?")
     st.caption(
         "Scored 0-100: activity match (40 pts), "
-        "budget fit (40 pts), season (20 pts). "
-        "Descriptions sourced live from Wikipedia."
+        "budget fit (40 pts), and season (20 pts). "
+        "Hermes explains how each stop fits your route."
     )
 
     for city in destinations:
@@ -116,7 +191,6 @@ def render_agent_thinking(
         )
 
         city_web = web_data.get(city, {})
-        wiki_desc = city_web.get("description", "")
         weather = city_web.get("weather", {})
 
         with st.container():
@@ -130,13 +204,24 @@ def render_agent_thinking(
                 st.markdown(header)
                 st.progress(int(score), text=f"Score: {score}/100")
 
-                if wiki_desc:
-                    st.markdown(
-                        "<p style='font-style:italic;color:#cbd5e1;"
-                        "font-size:0.88rem;margin:6px 0 8px;"
-                        f"line-height:1.55;'>{wiki_desc}</p>",
-                        unsafe_allow_html=True,
+                st.markdown(
+                    _city_reasoning(
+                        city=city,
+                        country=country,
+                        nights=nights,
+                        score=score,
+                        matched=matched,
+                        reasons=reasons,
+                        avg_daily=avg_daily,
+                        style=style,
+                        pace=pace,
+                        month_name=month_name,
+                        weather=weather,
+                        dep=dep,
+                        num_countries=num_countries,
+                        trip_type=trip_type,
                     )
+                )
 
                 if weather.get("avg_high_c") is not None:
                     cond = weather["condition"]
@@ -149,14 +234,6 @@ def render_agent_thinking(
                         f"{lo}°C to {hi}°C</span>",
                         unsafe_allow_html=True,
                     )
-
-                reason_parts = [f"- {r}" for r in reasons]
-                if avg_daily:
-                    reason_parts.append(
-                        f"- Est. daily cost: **€{avg_daily:,.0f}**"
-                    )
-                if reason_parts:
-                    st.markdown("\n".join(reason_parts))
 
                 if matched:
                     st.caption(
