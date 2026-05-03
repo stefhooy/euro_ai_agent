@@ -28,8 +28,6 @@
 
 ## How This Project Started
 
-This project began as a university assignment for the AI Agent module at IE University (Term 3, 2026).
-
 **Phase 1 - Gemini + Google APIs**
 
 The first version used Google's Gemini API as the language model brain, combined with several Google APIs (Places API for location data, Directions API for routing). The idea was to let Gemini reason about the whole trip end-to-end and call the Google APIs as tools. The results looked promising on paper but came with real problems:
@@ -99,11 +97,7 @@ Replaced the LLM self-critique (which was generic and unhelpful) with a structur
 **v6 - Hermes rebrand + modular code**
 The app was renamed from "EuroTrip Agent" to Hermes (Greek god of roads, travel and commerce). The 700-line `app.py` was split into 9 focused modules. Added custom fonts (Cinzel for the hero title), turquoise colour theme, and a proper hero landing page with capability cards.
 
----
-
 ## What Hermes Looks Like
-
-> Add a screenshot of the running app here. Take one with `streamlit run ui/app.py` and save it as `docs/screenshot.png`, then update this line:
 
 ![Hermes App Screenshot](ui/assets/snippet.png)
 
@@ -204,8 +198,6 @@ The app opens at [http://localhost:8501](http://localhost:8501).
 cd euro_ai_agent
 streamlit run ui/app.py
 ```
-
----
 
 ## How Hermes Plans Your Trip
 
@@ -423,7 +415,3 @@ No paid API keys are required to run this project.
 - [Wikipedia REST API](https://en.wikipedia.org/api/rest_v1/) - city descriptions
 - [Open-Meteo](https://open-meteo.com) - historical weather data
 - [Nominatim / OpenStreetMap](https://nominatim.org) - city coordinates
-
----
-
-*IE University - Term 3 AI Agent Module - 2026*
