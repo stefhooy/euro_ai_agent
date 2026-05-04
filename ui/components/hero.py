@@ -1,12 +1,13 @@
+import base64
 from pathlib import Path
+from typing import Optional
 
 import streamlit as st
 
 _ASSETS = Path(__file__).parent.parent / "assets"
 
-# Look for any common image format in the assets folder named "hermes"
 _EXTS = ("png", "jpg", "jpeg", "webp")
-_HERMES_IMAGE: Path | None = next(
+_HERMES_IMAGE: Optional[Path] = next(
     (
         _ASSETS / f"hermes.{ext}"
         for ext in _EXTS
@@ -14,6 +15,42 @@ _HERMES_IMAGE: Path | None = next(
     ),
     None,
 )
+
+
+def _b64(path: Path) -> str:
+    """Return base64-encoded bytes for a PNG, or empty string if missing."""
+    try:
+        return base64.b64encode(path.read_bytes()).decode()
+    except Exception:
+        return ""
+
+
+# Pre-load card icons once at import time.
+_ICON_MAP = {
+    "map":          _b64(_ASSETS / "map.png"),
+    "plane":        _b64(_ASSETS / "plane.png"),
+    "accomodation": _b64(_ASSETS / "accomodation.png"),
+    "activities":   _b64(_ASSETS / "activities.png"),
+    "calendar":     _b64(_ASSETS / "calendar.png"),
+    "weather":      _b64(_ASSETS / "weather.png"),
+}
+
+_ICON_SIZE = 32  # px - same visual weight as a 1.6rem text emoji
+
+
+def _icon_html(key: str, fallback: str) -> str:
+    """Return an <img> tag for the card icon, falling back to emoji."""
+    b64 = _ICON_MAP.get(key, "")
+    if b64:
+        return (
+            f"<img src='data:image/png;base64,{b64}' "
+            f"width='{_ICON_SIZE}' height='{_ICON_SIZE}' "
+            f"style='object-fit:contain;display:block;'/>"
+        )
+    return (
+        f"<span style='font-size:1.6rem;line-height:1;'>"
+        f"{fallback}</span>"
+    )
 
 
 def render_hero() -> None:
@@ -24,7 +61,6 @@ def render_hero() -> None:
         if _HERMES_IMAGE:
             st.image(str(_HERMES_IMAGE), use_container_width=True)
         else:
-            # Placeholder until the user drops in the image
             st.markdown(
                 "<div style='background:rgba(13,148,136,0.15);"
                 "border:2px dashed rgba(13,148,136,0.4);"
@@ -58,7 +94,6 @@ def render_hero() -> None:
             unsafe_allow_html=True,
         )
 
-        # Name origin
         st.markdown(
             "<div style='background:rgba(13,148,136,0.12);"
             "border-left:3px solid #0d9488;"
@@ -107,38 +142,39 @@ def render_hero() -> None:
     )
 
     capabilities = [
-        ("🗺️", "Picks your destinations",
-         "Scores 40+ European cities against your budget, "
-         "activity preferences, and travel season to find the "
-         "best matches."),
-        ("✈️", "Plans every leg of the journey",
+        ("map",          "🗺️",  "Picks your destinations",
+         "Scores 80 European cities against your budget, "
+         "activity preferences, travel season, and proximity "
+         "to your departure city to find the best matches."),
+        ("plane",        "✈️",  "Plans every leg of the journey",
          "Compares flights, trains, and buses for each route "
          "segment, applying real geographic constraints like "
          "water crossings and mountain ranges."),
-        ("🏨", "Estimates accommodation",
+        ("accomodation", "🏨",  "Estimates accommodation",
          "Calculates realistic hotel costs by city, travel "
          "style (backpacker / mid-range / luxury), and season."),
-        ("🎭", "Generates a day-by-day activity plan",
+        ("activities",   "🎭",  "Generates a day-by-day activity plan",
          "Uses a local AI model to suggest activities for each "
          "city, matched to your stated interests."),
-        ("📅", "Shows you the cheapest time to travel",
+        ("calendar",     "📅",  "Shows you the cheapest time to travel",
          "A 12-month pricing calendar compares total trip cost "
          "across every month so you can pick the best window."),
-        ("🌤️", "Pulls live weather data",
+        ("weather",      "🌤️", "Pulls live weather data",
          "Fetches historical Open-Meteo data for each city in "
          "your travel month so you know what to pack."),
     ]
 
     cols = st.columns(3)
-    for i, (icon, title, desc) in enumerate(capabilities):
+    for i, (icon_key, fallback, title, desc) in enumerate(capabilities):
         with cols[i % 3]:
             st.markdown(
                 f"<div style='background:rgba(255,255,255,0.04);"
                 f"border:1px solid rgba(255,255,255,0.08);"
                 f"border-radius:12px;padding:18px 16px;"
                 f"margin-bottom:16px;height:100%;'>"
-                f"<div style='font-size:1.6rem;"
-                f"margin-bottom:8px;'>{icon}</div>"
+                f"<div style='margin-bottom:10px;'>"
+                f"{_icon_html(icon_key, fallback)}"
+                f"</div>"
                 f"<div style='font-weight:600;color:#e2e8f0;"
                 f"font-size:0.95rem;margin-bottom:6px;'>{title}</div>"
                 f"<div style='color:#94a3b8;font-size:0.82rem;"
