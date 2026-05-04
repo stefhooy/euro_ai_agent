@@ -1,6 +1,8 @@
 import json
 import logging
+import math
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from langchain_ollama import ChatOllama
@@ -20,6 +22,107 @@ from tools.web_search import enrich_cities
 logger = logging.getLogger(__name__)
 
 LLM = ChatOllama(model="llama3.1:8b", temperature=0.3)
+
+# ---------------------------------------------------------------------------
+# Geographic helpers for route ordering
+# ---------------------------------------------------------------------------
+
+def _load_seed_coords() -> Dict[str, Tuple[float, float]]:
+    seed = Path(__file__).parent.parent / "data" / "european_cities_seed.json"
+    try:
+        with open(seed, encoding="utf-8") as f:
+            return {c["name"]: (c["lat"], c["lon"]) for c in json.load(f)}
+    except Exception:
+        return {}
+
+
+_SEED_COORDS: Dict[str, Tuple[float, float]] = _load_seed_coords()
+
+# Coordinates for departure cities that are not in the seed dataset.
+_EXTRA_DEP_COORDS: Dict[str, Tuple[float, float]] = {
+    "Glasgow":     (55.8642,   -4.2518),
+    "Birmingham":  (52.4862,   -1.8904),
+    "Bristol":     (51.4545,   -2.5879),
+    "Liverpool":   (53.4084,   -2.9916),
+    "Leeds":       (53.8008,   -1.5491),
+    "Cardiff":     (51.4816,   -3.1791),
+    "Marseille":   (43.2965,    5.3698),
+    "Toulouse":    (43.6047,    1.4442),
+    "Turin":       (45.0703,    7.6869),
+    "Bilbao":      (43.2630,   -2.9350),
+    "Malaga":      (36.7213,   -4.4214),
+    "The Hague":   (52.0705,    4.3007),
+    "Dusseldorf":  (51.2217,    6.7762),
+    "Stuttgart":   (48.7758,    9.1829),
+    "New York":    (40.7128,  -74.0060),
+    "Los Angeles": (34.0522,  -118.2437),
+    "Toronto":     (43.6532,  -79.3832),
+    "Dubai":       (25.2048,   55.2708),
+    "Singapore":   (1.3521,   103.8198),
+}
+
+
+def _haversine_km(
+    lat1: float, lon1: float, lat2: float, lon2: float
+) -> float:
+    """Great-circle distance between two coordinates in kilometres."""
+    r = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    return r * 2 * math.asin(math.sqrt(a))
+
+
+def _nearest_neighbor_order(
+    departure_city: str,
+    selected_cities: List[str],
+) -> List[str]:
+    """Reorder cities by nearest-neighbour traversal from departure.
+
+    Prevents zigzag routes like Tirana->Paris->Sofia->London by always
+    stepping to the geographically closest unvisited city next.
+    Falls back to original order if departure coords are unknown.
+    """
+    if len(selected_cities) <= 1:
+        return selected_cities
+
+    dep_lower = departure_city.strip().lower()
+    dep_coords: Optional[Tuple[float, float]] = None
+    for name, coords in _SEED_COORDS.items():
+        if name.lower() == dep_lower:
+            dep_coords = coords
+            break
+    if dep_coords is None:
+        for name, coords in _EXTRA_DEP_COORDS.items():
+            if name.lower() == dep_lower:
+                dep_coords = coords
+                break
+    if dep_coords is None:
+        return selected_cities
+
+    remaining = list(selected_cities)
+    ordered: List[str] = []
+    cur_lat, cur_lon = dep_coords
+
+    while remaining:
+        nearest = min(
+            remaining,
+            key=lambda n: _haversine_km(
+                cur_lat, cur_lon,
+                *_SEED_COORDS.get(n, (cur_lat, cur_lon)),
+            ),
+        )
+        ordered.append(nearest)
+        remaining.remove(nearest)
+        cur_lat, cur_lon = _SEED_COORDS.get(nearest, (cur_lat, cur_lon))
+
+    logger.info(f"Route ordered by proximity: {ordered}")
+    return ordered
 
 
 def _get_travel_year(preferences: Dict[str, Any]) -> int:
@@ -223,7 +326,7 @@ def run_agent(
     logger.info("=" * 50)
 
     # Step 1: Score destinations
-    _cb("Scoring 40 European destinations...")
+    _cb("Scoring 80 European destinations...")
     logger.info("Step 1/6 - Scoring destinations...")
     destinations_result = score_destinations(preferences)
     top_cities = destinations_result.get("top_destinations", [])
@@ -256,6 +359,14 @@ def run_agent(
     selected_cities, nights_per_city = _llm_decide_cities(
         top_cities, preferences
     )
+
+    # Order cities by nearest-neighbour from departure so the route
+    # flows geographically rather than jumping across the continent.
+    selected_cities = _nearest_neighbor_order(
+        preferences.get("departure_city", ""), selected_cities
+    )
+    # Re-sync nights dict key order to match the new city order.
+    nights_per_city = {c: nights_per_city[c] for c in selected_cities}
 
     # Step 2b: Fetch live Wikipedia + weather data
     _cb(f"Fetching live data for {', '.join(selected_cities)}...")
