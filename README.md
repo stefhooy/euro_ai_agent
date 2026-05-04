@@ -336,7 +336,7 @@ euro_ai_agent/
         activities.py             - LLM activity generator with fallback
         budget.py                 - total cost aggregation and over-budget detection
         city_data.py              - city profile builder from seed data
-        destination.py            - destination scoring engine
+        destination.py            - destination scoring engine with proximity scoring
         flights.py                - flight cost / route estimation helpers
         pricing_calendar.py       - 12-month cost comparison
         replanner.py              - automatic budget replanning
@@ -352,16 +352,22 @@ euro_ai_agent/
         styles.py                 - global CSS injection
 
         assets/
+            activities.png        - icon for activity plan card
+            accomodation.png      - icon for accommodation card
+            calendar.png          - icon for pricing calendar card
             hermes.png            - agent portrait for the hero page
-            snippet.png           - UI/media asset
+            map.png               - icon for destinations card
+            plane.png             - icon for transport card
+            snippet.png           - UI screenshot for README
             web_euro.png          - logo used in sidebar and browser tab
+            weather.png           - icon for weather card
 
         components/
             __init__.py
             agent_thinking.py     - "How Hermes planned this" panel
             cards.py              - city itinerary cards
             charts.py             - cost pie and pricing calendar charts
-            hero.py               - landing page
+            hero.py               - landing page with capability cards
             results.py            - results page orchestrator
 
     .gitignore
