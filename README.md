@@ -84,7 +84,7 @@ Everything else is deterministic Python, which means the output is consistent an
 Added real-world geographic rules to the transport tool: no buses across the English Channel, trains only via Eurostar for London routes, time penalties for Alpine and Pyrenean mountain crossings. Added an automatic replanner that kicks in if the first plan exceeds the user's budget.
 
 **v5 - Current version**
-The agent now has 88 automated tests, handles 40+ European cities, and the LLM fallback is robust enough to produce sensible results even when Ollama is not running.
+The agent now has 90 automated tests, handles 80 European cities across all five regions, and the LLM fallback is robust enough to produce sensible results even when Ollama is not running.
 
 ---
 
@@ -216,7 +216,7 @@ Hermes follows a fixed 6-step pipeline. Each step is a Python function; the LLM 
 
 ### Step 1 - Score destinations
 
-Hermes scores all 40 cities in the seed dataset against your preferences. Each city gets a score out of 100:
+Hermes scores all 80 cities in the seed dataset against your preferences. Each city gets a score out of 100:
 
 | Component | Points | How it is calculated |
 |---|---|---|
@@ -380,7 +380,7 @@ euro_ai_agent/
 python -m pytest tests/ -v
 ```
 
-88 tests covering all tools, the agent core, and the planner. The full suite runs in around 30-60 seconds with Ollama running, or under 10 seconds without it (activities tests use the fallback).
+90 tests covering all tools, the agent core, and the planner. The full suite runs in around 30-60 seconds with Ollama running, or under 10 seconds without it (activities tests use the fallback).
 
 To run a specific file:
 
@@ -398,9 +398,9 @@ Hermes does not connect to Skyscanner, Google Flights, Booking.com, Airbnb, or a
 
 The Skyscanner and Booking.com APIs are either not publicly available or require a commercial partnership. Google Flights does not offer a public API. Building a real-time price aggregator would require either paid API access or a scraping layer (which violates most platforms' terms of service).
 
-**Cities are limited to 40 seed entries**
+**Cities are limited to 80 seed entries**
 
-The destination scoring system works from a fixed dataset of 40 European cities. Cities outside this list will not appear as recommended destinations (though they can still be used as departure or return cities).
+The destination scoring system works from a curated dataset of 80 European cities spanning all five regions (Southern, Western, Central, Eastern, and Northern Europe). Cities outside this list will not appear as recommended destinations, though they can still be used as departure or return cities.
 
 **Weather is historical, not forecast**
 
@@ -434,7 +434,7 @@ The automatic replanner makes limited adjustments (accommodation tier, activity 
 | Transport cost model | Distance formula + seasonal multipliers | Built in |
 | Accommodation cost model | Regional averages by style and season | Built in |
 | Activity generation | Ollama llama3.1:8b (local) | Free |
-| City seed dataset | Hand-curated JSON (40 cities) | Built in |
+| City seed dataset | Hand-curated JSON (80 cities) | Built in |
 
 No paid API keys are required to run this project.
 
@@ -445,7 +445,7 @@ No paid API keys are required to run this project.
 - [Python 3.12](https://www.python.org)
 - [Streamlit](https://streamlit.io) - web interface
 - [Ollama](https://ollama.com) - local LLM runtime
-- [LangChain](https://langchain.com) - LLM abstraction layer
+- [LangChain](https://langchain.com) (`langchain-ollama`, `langchain-core`) - LLM abstraction layer used for Ollama chat and message formatting
 - [Plotly](https://plotly.com) - interactive charts
 - [Wikipedia REST API](https://en.wikipedia.org/api/rest_v1/) - city descriptions
 - [Open-Meteo](https://open-meteo.com) - historical weather data
