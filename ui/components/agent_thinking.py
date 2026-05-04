@@ -101,14 +101,61 @@ def _city_reasoning(
     else:
         route_text = "this stop fits the overall route shape"
 
-    paragraph = (
-        f"{choice_phrase} {place}. My logic here was to give the route "
-        f"a strong balance of preference fit, budget control, and timing. "
-        f"From {dep}, {route_text}. I gave it {nights} {night_label} "
-        f"because your {pace} pace needs enough time to enjoy the city "
-        f"without making the route feel rushed. It scored {score}/100: "
-        f"{interest_text}, and {budget_text}.{weather_text}"
-    )
+    if total <= 1:
+        paragraph = (
+            f"I started with {place} because it gives us a clear, confident "
+            f"anchor for the whole trip. From {dep}, {route_text}, and I "
+            f"gave it {nights} {night_label} so the plan feels intentional "
+            f"rather than rushed. It scored {score}/100 because "
+            f"{interest_text}, and {budget_text}.{weather_text}"
+        )
+    elif index == 0:
+        paragraph = (
+            f"{choice_phrase} {place} as the opening chapter of the route. "
+            f"I wanted the trip to begin somewhere that immediately pays "
+            f"off your preferences, so this stop gives us momentum without "
+            f"losing control of the budget. From {dep}, {route_text}. I set "
+            f"aside {nights} {night_label} because a {pace} pace should "
+            f"feel curious, not frantic. It scored {score}/100: "
+            f"{interest_text}, and {budget_text}.{weather_text}"
+        )
+    elif index == total - 1:
+        paragraph = (
+            f"{choice_phrase} {place} to close the itinerary with a clear "
+            f"final note. By this point, I wanted the route to feel complete, "
+            f"not just longer, so this city earns its place by balancing the "
+            f"countries already chosen. From {dep}, {route_text}. I gave it "
+            f"{nights} {night_label}, which keeps the ending comfortable "
+            f"for your {pace} pace. It scored {score}/100 because "
+            f"{interest_text}, and {budget_text}.{weather_text}"
+        )
+    elif index % 3 == 1:
+        paragraph = (
+            f"{choice_phrase} {place} because this is where the route starts "
+            f"to gain texture. I am not only stacking famous cities; I am "
+            f"trying to make each stop do a different job for you. Here, "
+            f"{route_text}. I planned {nights} {night_label} so you have "
+            f"room to explore at a {pace} pace. The score was {score}/100: "
+            f"{interest_text}, and {budget_text}.{weather_text}"
+        )
+    elif index % 3 == 2:
+        paragraph = (
+            f"{choice_phrase} {place} as a deliberate change of rhythm. "
+            f"This stop helps the trip avoid feeling repetitive while still "
+            f"respecting what you asked for. From {dep}, {route_text}, and "
+            f"{nights} {night_label} gives the city enough space in the "
+            f"itinerary. It scored {score}/100 because {interest_text}, "
+            f"and {budget_text}.{weather_text}"
+        )
+    else:
+        paragraph = (
+            f"{choice_phrase} {place} because it strengthens the middle of "
+            f"the journey. I wanted this part of the plan to keep the route "
+            f"fresh while still making practical sense. From {dep}, "
+            f"{route_text}. I gave it {nights} {night_label} at your "
+            f"{pace} pace, and it scored {score}/100 because "
+            f"{interest_text}, and {budget_text}.{weather_text}"
+        )
 
     bullets = [
         f"- Interest fit: {_human_list(matched)}."
