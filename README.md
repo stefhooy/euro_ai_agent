@@ -220,9 +220,10 @@ Hermes scores all 80 cities in the seed dataset against your preferences. Each c
 
 | Component | Points | How it is calculated |
 |---|---|---|
-| Activity match | 40 | Proportion of your selected interests that the city supports |
-| Budget fit | 40 | How well the city's average daily cost fits your daily budget |
+| Activity match | 30 | Proportion of your selected interests that the city supports |
+| Budget fit | 30 | How well the city's average daily cost fits your daily budget |
 | Season | 20 | Whether your travel month is in the city's best season |
+| Proximity | 20 | How close the city is to your departure point (decays to 0 at 3,000 km) |
 
 The top `max(10, countries_requested x 3)` cities become the candidate pool.
 

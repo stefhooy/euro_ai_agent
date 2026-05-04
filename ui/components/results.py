@@ -37,7 +37,7 @@ realistic budget, not to replace live booking platforms.
 | Transport costs | Distance-based model + seasonal multipliers | Estimated |
 | Accommodation costs | Regional averages by style + season | Estimated |
 | Activity suggestions | Local AI (llama3.1:8b) | AI-generated |
-| City scoring | Curated dataset of 40 European cities | Static |
+| City scoring | Curated dataset of 80 European cities | Static |
 | Pricing calendar | Transport + accommodation model, 12 months | Estimated |
 
 Prices can vary significantly depending on how far in advance you book,
